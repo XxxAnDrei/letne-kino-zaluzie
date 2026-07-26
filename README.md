@@ -1,8 +1,12 @@
 # Letné kino u vás na záhrade — Veľké Zálužie
 
 Jednostránka s rezervačným kalendárom na bezplatné zapožičanie nafukovacieho
-plátna, projektora a reproduktora rodinám vo Veľkom Záluží. Súčasťou je skrytý
-správcovský panel, v ktorom sa žiadosti schvaľujú.
+plátna, projektora a reproduktora. Súčasťou je sekcia s dobrovoľným príspevkom
+pre občianske združenie Šport Veľké Zálužie a skrytý správcovský panel,
+v ktorom sa žiadosti schvaľujú.
+
+Počas úvodnej fázy majú pri prideľovaní termínov prednosť obyvatelia Veľkého
+Zálužia. Jednotlivé dni sa dajú otvoriť aj pre okolité obce.
 
 ```
 verejná stránka   /
@@ -36,6 +40,18 @@ Deň je v kalendári voľný, pokiaľ neplatí ani jedno z tohto:
 | `far`       | za horizontom, na ktorý sa dá rezervovať (`horizon_days`)         |
 | `paused`    | príjem žiadostí je dočasne pozastavený                            |
 
+Každý voľný termín nesie navyše **určenie**, teda pre koho je otvorený:
+
+| Určenie    | Kto môže požiadať                                     |
+| ---------- | ----------------------------------------------------- |
+| `zaluzie`  | iba obyvatelia Veľkého Zálužia (predvolené)           |
+| `all`      | aj záujemcovia z okolitých obcí                       |
+| `approval` | ktokoľvek, ale termín potvrdzuješ individuálne        |
+
+Predvolené určenie sa nastavuje globálne, jednotlivé dni sa prepínajú v paneli.
+Obec sa porovnáva bez ohľadu na diakritiku a veľkosť písmen, takže „velke
+zaluzie" prejde rovnako ako „Veľké Zálužie".
+
 Žiadosť **drží termín hneď po odoslaní**, aby ho medzitým nedostal niekto druhý.
 Ak ju zamietneš alebo zrušíš, deň sa automaticky vráti do kalendára ako voľný.
 
@@ -55,8 +71,27 @@ relácia trvá 12 hodín.
 - interná poznámka ku každej žiadosti
 - ručné blokovanie dní
 - nastavenia: sezóna, časy prevzatia a vrátenia, lehota vopred, horizont,
-  maximálny počet osôb, pozastavenie príjmu
+  predvolené určenie termínov, pozastavenie príjmu
+- presun na náhradný termín pri zlom počasí — pôvodný deň sa uvoľní späť
+- odovzdávací a preberací zoznam s časom, položkami a stavom vybavenia
+- určenie termínov pre Zálužie / okolité obce / po dohode
+- blokovanie problémových kontaktov (telefón alebo e-mail)
+- údaje občianskeho združenia vrátane IBAN, ktoré idú do QR platby
 - export všetkých rezervácií do CSV (otvorí sa aj v Exceli s diakritikou)
+
+## Dobrovoľný príspevok
+
+Sekcia je zámerne oddelená od rezervácie — príspevok nikdy nie je podmienkou
+odoslania žiadosti a formulár sa bez neho odošle úplne rovnako.
+
+QR kód sa generuje na serveri podľa štandardu **PAY by square**, takže ho
+prečítajú slovenské bankové aplikácie. Bez zadanej sumy vznikne QR, do ktorého
+si človek doplní sumu sám; to je zámer, nie nedorobok. Ako záloha slúži odkaz
+na `payme.sk` s predvyplneným účtom.
+
+Údaje združenia (názov, IBAN, správa) sú v HTML aj staticky, aby stránka dávala
+zmysel bez JavaScriptu, a po načítaní sa zosúladia s tým, čo má správca uložené
+v nastaveniach.
 
 ## Premenné prostredia
 
@@ -116,13 +151,14 @@ server/
 public/
   index.html      verejná stránka
   spravca.html    panel
-  assets/js/      motion.js (GSAP), booking.js (kalendár), admin.js
+  assets/js/      motion.js (GSAP), booking.js (kalendár),
+                  donation.js (príspevok a QR), admin.js
   assets/fonts/   Instrument Sans + Serif, lokálne (nič sa neťahá z Googlu)
   media/          video a poster do hero
 ```
 
 Grafika mimo hero nie sú fotky, ale kreslené SVG priamo v `index.html` —
-mierkový výkres plátna v sekcii „O čo tu ide" a elevácia záhrady v scéne
+mierkový výkres plátna v sekcii „Čo potrebuješ zabezpečiť" a elevácia záhrady v scéne
 večera. Sú inline preto, že ich animuje GSAP podľa pozície scrollu a potrebuje
 sa dostať na jednotlivé skupiny (`#gScreen`, `#gKit`, `#gPeople` a ďalšie).
 

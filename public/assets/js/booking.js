@@ -15,6 +15,12 @@
   ];
   var DAYS = ["pondelok", "utorok", "streda", "štvrtok", "piatok", "sobota", "nedeľa"];
 
+  var SCOPE_LABEL = {
+    zaluzie: "voľné pre Veľké Zálužie",
+    all: "voľné aj pre okolité obce",
+    approval: "voľné po dohode",
+  };
+
   var STATUS_LABEL = {
     free: "voľné",
     taken: "obsadené",
@@ -194,13 +200,16 @@
       var isFree = status === "free";
 
       var cell = document.createElement(isFree ? "button" : "div");
-      cell.className = "day day--" + status;
+      cell.className = "day day--" + status + (isFree && info.scope ? " day--" + info.scope : "");
       cell.dataset.date = iso;
       cell.textContent = String(day);
       if (iso === state.today) cell.classList.add("day--today");
       if (iso === state.selected || iso === state.backup) cell.classList.add("is-selected");
 
-      var label = longDate(iso) + " — " + (STATUS_LABEL[status] || status);
+      var label =
+        longDate(iso) +
+        " — " +
+        (isFree && info.scope ? SCOPE_LABEL[info.scope] : STATUS_LABEL[status] || status);
       if (isFree) {
         cell.type = "button";
         cell.setAttribute("aria-label", label + ". Kliknutím vyberieš tento termín.");
@@ -302,8 +311,10 @@
   }
 
   function clearAllErrors() {
-    ["name", "phone", "people", "address", "email", "note", "date", "backupDate"].forEach(clearFieldError);
-    ["power", "garden", "wifi", "terms"].forEach(clearFieldError);
+    ["name", "phone", "email", "municipality", "address", "note", "date", "backupDate"].forEach(
+      clearFieldError
+    );
+    ["adult", "manual", "content", "terms", "privacy"].forEach(clearFieldError);
     el.formError.hidden = true;
     el.formError.textContent = "";
   }
@@ -345,13 +356,14 @@
       name: $("name").value,
       phone: $("phone").value,
       email: $("email").value,
+      municipality: $("municipality").value,
       address: $("address").value,
-      people: Number($("people").value),
       note: $("note").value,
-      power: $("power").checked,
-      garden: $("garden").checked,
-      wifi: $("wifi").checked,
+      adult: $("adult").checked,
+      manual: $("manual").checked,
+      content: $("content").checked,
       terms: $("terms").checked,
+      privacy: $("privacy").checked,
       web: $("hp").value,
     };
 
@@ -414,7 +426,13 @@
         })
         .join("") +
       "</dl>" +
-      '<p class="form__note">Ak sa niečo zmení, zavolaj mi alebo napíš — číslo nájdeš v pätičke stránky.</p>' +
+      '<p class="form__note">Ak sa niečo zmení, zavolaj mi alebo napíš, číslo nájdeš v pätičke stránky.</p>' +
+      '<div class="ticket__give">' +
+      "<p>Za zapožičanie nie je stanovený povinný poplatok. Budeme však radi, ak podľa " +
+      "svojich možností podporíte ďalšie komunitné projekty dobrovoľným príspevkom " +
+      "občianskemu združeniu " + escapeHtml(data.oz || "Šport Veľké Zálužie") + ".</p>" +
+      '<a class="link" href="#prispevok">Ako prispieť</a>' +
+      "</div>" +
       "</div>" +
       '<div class="ticket__stub">' +
       '<span class="ticket__ref">' + escapeHtml(data.ref) + "</span>" +

@@ -63,10 +63,11 @@
           </span>
         </a>
         <nav class="nav" aria-label="Hlavná navigácia">
-          <a href="#pribeh">O čo ide</a>
-          <a href="#balenie">Čo dostaneš</a>
-          <a href="#zapojenie">Zapojenie</a>
-          <a href="#pravidla">Pravidlá</a>
+          <a href="#pribeh">Ako to funguje</a>
+          <a href="#balenie">Vybavenie</a>
+          <a href="#iniciator">Iniciátor</a>
+          <a href="#prispevok">Podporiť</a>
+          <a href="#podmienky">Podmienky</a>
           <a class="btn" href="#terminy">Voľné termíny</a>
         </nav>
       </div>
@@ -96,7 +97,7 @@
 
         <div class="wrap hero__inner">
           <p class="meta reveal" data-hero="meta">
-            Súkromné vybavenie · zapožičiavam bezplatne · Veľké Zálužie
+            Bezplatné zapožičanie · úvodná fáza pre Veľké Zálužie
           </p>
           <h1 class="hero__title" id="heroTitle">
             <span class="ln"><span>Letné kino</span></span>
@@ -104,11 +105,11 @@
           </h1>
           <div class="hero__foot">
             <div>
-              <ul class="hero__specs lede reveal" data-hero="specs">
-                <li>200" nafukovacie plátno</li>
-                <li>Zapojenie za 10 minút</li>
-                <li>Bez poplatku a bez zálohy</li>
-              </ul>
+              <p class="lede reveal measure" data-hero="specs" style="margin-bottom: 1.5rem">
+                Vytvorte si vlastné letné kino priamo doma na záhrade. Techniku si
+                jednoducho rezervujete, zapojíte podľa návodu a filmový večer sa môže
+                začať.
+              </p>
               <div class="hero__cta reveal" data-hero="cta">
                 <a class="btn" href="#terminy">
                   Vybrať voľný termín
@@ -134,102 +135,34 @@
         </div>
       </section>
 
-      <!-- ================================================== PRÍBEH -->
+      <!-- ============================================ AKO TO FUNGUJE -->
       <section class="section" id="pribeh">
         <div class="wrap">
-          <p class="eyebrow"><b>01</b> O čo tu ide</p>
+          <p class="eyebrow"><b>01</b> Ako projekt funguje</p>
           <div class="story">
             <h2 class="h-section story__claim reveal">
               Moje vybavenie, <i>váš</i> večer
             </h2>
 
-            <!-- Mierkový výkres namiesto ďalšej fotky z toho istého videa.
-                 Odpovedá na otázku, ktorú si čitateľ naozaj kladie: zmestí sa
-                 mi to na záhradu? Rovnaký line-art ako ikony v balení. -->
-            <figure class="story__proof reveal">
-              <svg class="draw draw--scale" viewBox="0 200 1080 442" role="img"
-                   aria-labelledby="scaleTitle scaleDesc">
-                <title id="scaleTitle">Mierkový výkres nafukovacieho plátna</title>
-                <desc id="scaleDesc">
-                  Plátno s uhlopriečkou 200 palcov je približne 5,2 metra široké
-                  a 3,4 metra vysoké. Vedľa neho stojí postava vysoká 175 centimetrov.
-                  Na postavenie treba rovnú plochu aspoň 6 × 4 metre.
-                </desc>
-
-                <g class="draw__ground">
-                  <path class="d-line" d="M40 520 H1040" />
-                  <path class="d-hatch" d="M52 520 l-12 16 M112 520 l-12 16 M172 520 l-12 16
-                    M232 520 l-12 16 M292 520 l-12 16 M352 520 l-12 16 M412 520 l-12 16
-                    M472 520 l-12 16 M532 520 l-12 16 M592 520 l-12 16 M652 520 l-12 16
-                    M712 520 l-12 16 M772 520 l-12 16 M832 520 l-12 16 M892 520 l-12 16
-                    M952 520 l-12 16 M1012 520 l-12 16" />
-                </g>
-
-                <g class="draw__object">
-                  <path class="d-frame" d="M180 520 L226 232 L400 288 L574 232 L620 520 Z" />
-                  <rect class="d-surface" x="250" y="300" width="300" height="169" />
-                  <path class="d-diag" d="M250 469 L550 300" />
-                  <path class="d-guy" d="M180 520 L124 550 M620 520 L676 550" />
-                  <path class="d-tick" d="M120 542 v14 M672 542 v14" />
-                </g>
-
-                <!-- Postava je mierka, nie ilustrácia: 175 cm vedľa plátna
-                     odpovie na otázku „aké je to veľké" rýchlejšie než číslo. -->
-                <g class="draw__figure">
-                  <circle cx="856" cy="385" r="13" />
-                  <path d="M856 398 v58 M856 414 l-22 22 M856 414 l22 22
-                           M856 456 l-17 64 M856 456 l17 64" />
-                </g>
-
-                <g class="draw__dims">
-                  <path class="d-ext" d="M180 530 v46 M620 530 v46 M660 232 h-90 M660 520 h-46" />
-                  <path class="d-dim" d="M180 562 H620" />
-                  <path class="d-tick" d="M180 554 v16 M620 554 v16" />
-                  <text class="d-num" x="400" y="554" text-anchor="middle">≈ 5,2 m</text>
-
-                  <path class="d-dim" d="M660 232 V520" />
-                  <path class="d-tick" d="M652 232 h16 M652 520 h16" />
-                  <text class="d-num" x="676" y="382">≈ 3,4 m</text>
-
-                  <path class="d-ext" d="M886 372 h34 M886 520 h34" />
-                  <path class="d-dim" d="M914 372 V520" />
-                  <path class="d-tick" d="M906 372 h16 M906 520 h16" />
-                  <text class="d-num d-num--sm" x="930" y="452">175 cm</text>
-
-                  <text class="d-num d-num--amber" x="408" y="352" text-anchor="middle">200″</text>
-                </g>
-
-                <g class="draw__plot">
-                  <path class="d-plot" d="M100 610 H980" />
-                  <path class="d-tick" d="M100 602 v16 M980 602 v16" />
-                  <text class="d-num d-num--sm" x="540" y="602" text-anchor="middle">
-                    rovná plocha aspoň 6 × 4 m
-                  </text>
-                </g>
-              </svg>
-              <figcaption class="meta">
-                Elevácia · rozmery približné, uhlopriečka 200 palcov
-              </figcaption>
-            </figure>
-
             <div class="story__body">
               <div class="story__col">
                 <p class="lede reveal">
-                  Plátno, projektor a reproduktor sú moje súkromné veci. Kúpil som ich na
-                  komunitné premietanie v obci a odvtedy väčšinu roka len ležia v pivnici.
+                  Projekt umožní ľuďom rezervovať si a bezplatne zapožičať technické
+                  vybavenie na vytvorenie letného kina vo vlastnej záhrade alebo inom
+                  vhodnom súkromnom priestore.
                 </p>
                 <p class="reveal">
-                  Tak som si povedal, že ich požičiam ďalej. Bezplatne, rodinám vo Veľkom
-                  Záluží, vždy na jeden večer. Nič sa neplatí, nedáva sa žiadna záloha a nie
-                  je za tým žiadny háčik. Zoberieš si to popoludní, večer si na záhrade
-                  pustíte film a na druhý deň ráno mi to vrátiš.
+                  Vyberiete si termín v kalendári, vyplníte krátku žiadosť a ja sa vám
+                  ozvem. Techniku si prevezmete popoludní, večer premietate a na druhý
+                  deň dopoludnia ju vrátite. Za zapožičanie sa neplatí nič.
                 </p>
               </div>
               <div class="story__col">
                 <p class="reveal">
-                  Termíny idú podľa poradia. Každý tu vidí ten istý kalendár a vyberá si
-                  z toho istého, čo je voľné. Bez žrebovania a bez toho, aby o tom niekto
-                  rozhodoval.
+                  Projekt je určený aj pre záujemcov z okolitých obcí. Počas úvodnej
+                  fázy však budú pri prideľovaní termínov uprednostnení obyvatelia
+                  Veľkého Zálužia. Neobsadené termíny môžu byť následne ponúknuté aj
+                  ostatným záujemcom.
                 </p>
                 <blockquote class="story__signoff reveal">
                   <p>
@@ -568,10 +501,137 @@
         </div>
       </section>
 
+      <!-- ======================================== ČO POTREBUJE ZÁUJEMCA -->
+      <section class="section" id="potrebujes">
+        <div class="wrap">
+          <p class="eyebrow"><b>04</b> Čo potrebuješ zabezpečiť</p>
+
+          <div class="needs">
+            <div class="needs__head">
+              <h2 class="h-section reveal">Dve veci <i>doma</i>, zvyšok prinesiem</h2>
+              <p class="dim reveal">
+                Výkres ukazuje, koľko miesta plátno zaberie. Rozmery sú približné,
+                odvodené z uhlopriečky 200 palcov.
+              </p>
+            </div>
+
+            <figure class="needs__drawing reveal">
+              <svg class="draw draw--scale" viewBox="0 200 1080 442" role="img"
+              aria-labelledby="scaleTitle scaleDesc">
+              <title id="scaleTitle">Mierkový výkres nafukovacieho plátna</title>
+              <desc id="scaleDesc">
+              Plátno s uhlopriečkou 200 palcov je približne 5,2 metra široké
+              a 3,4 metra vysoké. Vedľa neho stojí postava vysoká 175 centimetrov.
+              Na postavenie treba rovnú plochu aspoň 6 × 4 metre.
+              </desc>
+
+              <g class="draw__ground">
+              <path class="d-line" d="M40 520 H1040" />
+              <path class="d-hatch" d="M52 520 l-12 16 M112 520 l-12 16 M172 520 l-12 16
+              M232 520 l-12 16 M292 520 l-12 16 M352 520 l-12 16 M412 520 l-12 16
+              M472 520 l-12 16 M532 520 l-12 16 M592 520 l-12 16 M652 520 l-12 16
+              M712 520 l-12 16 M772 520 l-12 16 M832 520 l-12 16 M892 520 l-12 16
+              M952 520 l-12 16 M1012 520 l-12 16" />
+              </g>
+
+              <g class="draw__object">
+              <path class="d-frame" d="M180 520 L226 232 L400 288 L574 232 L620 520 Z" />
+              <rect class="d-surface" x="250" y="300" width="300" height="169" />
+              <path class="d-diag" d="M250 469 L550 300" />
+              <path class="d-guy" d="M180 520 L124 550 M620 520 L676 550" />
+              <path class="d-tick" d="M120 542 v14 M672 542 v14" />
+              </g>
+
+              <!-- Postava je mierka, nie ilustrácia: 175 cm vedľa plátna
+              odpovie na otázku „aké je to veľké" rýchlejšie než číslo. -->
+              <g class="draw__figure">
+              <circle cx="856" cy="385" r="13" />
+              <path d="M856 398 v58 M856 414 l-22 22 M856 414 l22 22
+              M856 456 l-17 64 M856 456 l17 64" />
+              </g>
+
+              <g class="draw__dims">
+              <path class="d-ext" d="M180 530 v46 M620 530 v46 M660 232 h-90 M660 520 h-46" />
+              <path class="d-dim" d="M180 562 H620" />
+              <path class="d-tick" d="M180 554 v16 M620 554 v16" />
+              <text class="d-num" x="400" y="554" text-anchor="middle">≈ 5,2 m</text>
+
+              <path class="d-dim" d="M660 232 V520" />
+              <path class="d-tick" d="M652 232 h16 M652 520 h16" />
+              <text class="d-num" x="676" y="382">≈ 3,4 m</text>
+
+              <path class="d-ext" d="M886 372 h34 M886 520 h34" />
+              <path class="d-dim" d="M914 372 V520" />
+              <path class="d-tick" d="M906 372 h16 M906 520 h16" />
+              <text class="d-num d-num--sm" x="930" y="452">175 cm</text>
+
+              <text class="d-num d-num--amber" x="408" y="352" text-anchor="middle">200″</text>
+              </g>
+
+              <g class="draw__plot">
+              <path class="d-plot" d="M100 610 H980" />
+              <path class="d-tick" d="M100 602 v16 M980 602 v16" />
+              <text class="d-num d-num--sm" x="540" y="602" text-anchor="middle">
+              rovná plocha aspoň 6 × 4 m
+              </text>
+              </g>
+              </svg>
+              <figcaption class="meta">Elevácia · rozmery približné</figcaption>
+            </figure>
+
+            <ul class="needs__list">
+              <li class="reveal">
+                <span class="meta">01</span>
+                <b>Elektrická prípojka</b>
+                <p>Zásuvka 230 V v dosahu 20 metrov. Predlžovačku dostaneš v balení.</p>
+              </li>
+              <li class="reveal">
+                <span class="meta">02</span>
+                <b>Stabilné Wi-Fi</b>
+                <p>Potrebné, ak chceš premietať z internetu. Z USB kľúča alebo notebooku to ide aj bez neho.</p>
+              </li>
+              <li class="reveal">
+                <span class="meta">03</span>
+                <b>Bezpečný a dostatočne veľký priestor</b>
+                <p>Rovná plocha aspoň 6 × 4 metre, bez ostrých predmetov pod plátnom.</p>
+              </li>
+              <li class="reveal">
+                <span class="meta">04</span>
+                <b>Možnosť pevne upevniť plátno</b>
+                <p>Kolíky do trávy alebo iné kotvenie. Upevňovacie prvky sú súčasťou balenia.</p>
+              </li>
+              <li class="reveal">
+                <span class="meta">05</span>
+                <b>Trpezlivosť do zotmenia</b>
+                <p>Premietať sa dá až po úplnom zotmení, inak obraz nebude dobre viditeľný.</p>
+              </li>
+              <li class="reveal">
+                <span class="meta">06</span>
+                <b>Vhodné počasie</b>
+                <p>Bez dažďa a silného vetra. Na horšiu predpoveď slúži náhradný termín.</p>
+              </li>
+            </ul>
+          </div>
+
+          <aside class="notice reveal" role="note">
+            <svg viewBox="0 0 24 24" aria-hidden="true" class="notice__icon">
+              <path d="M12 3 L21.5 20 H2.5 Z M12 9.5 v5 M12 17.2 v.1"
+                    fill="none" stroke="currentColor" stroke-width="1.8"
+                    stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            <p>
+              Pre kvalitný a dobre viditeľný obraz je potrebné premietať až po úplnom
+              zotmení. Techniku nie je možné používať v daždi, pri silnom vetre ani
+              v podmienkach, ktoré by mohli ohroziť osoby alebo poškodiť vybavenie.
+            </p>
+          </aside>
+        </div>
+      </section>
+
       <!-- ================================================== TERMÍNY -->
       <section class="section" id="terminy">
         <div class="wrap">
-          <p class="eyebrow"><b>04</b> Voľné termíny a žiadosť</p>
+          <p class="eyebrow"><b>05</b> Voľné termíny a žiadosť</p>
           <div class="booking">
             <div class="booking__cal">
               <h2 class="h-section reveal" style="margin-bottom: 1.5rem">
@@ -611,6 +671,7 @@
               <div class="cal__legend">
                 <span><i class="k-free"></i> Voľné</span>
                 <span><i class="k-taken"></i> Obsadené</span>
+                <span><i class="k-all"></i> Aj pre okolité obce</span>
                 <span><i class="k-sel"></i> Tvoj výber</span>
                 <span class="dim" id="calHint"></span>
               </div>
@@ -651,22 +712,32 @@
                     <p class="field__err" id="err-phone"></p>
                   </div>
                   <div class="field">
-                    <label for="people">Počet osôb</label>
-                    <input type="number" id="people" name="people" min="1" max="60" value="6" required />
-                    <p class="field__err" id="err-people"></p>
+                    <label for="email">E-mail</label>
+                    <input type="email" id="email" name="email" autocomplete="email" required />
+                    <p class="field__err" id="err-email"></p>
                   </div>
                 </div>
 
                 <div class="field">
-                  <label for="address">Adresa vo Veľkom Záluží</label>
-                  <input type="text" id="address" name="address" placeholder="Ulica a číslo domu" autocomplete="street-address" required />
-                  <p class="field__err" id="err-address"></p>
+                  <label for="municipality">Obec</label>
+                  <input type="text" id="municipality" name="municipality" list="obce"
+                         placeholder="Veľké Zálužie" autocomplete="address-level2" required />
+                  <datalist id="obce">
+                    <option value="Veľké Zálužie"></option>
+                    <option value="Lehota"></option>
+                    <option value="Jarok"></option>
+                    <option value="Rumanová"></option>
+                    <option value="Báb"></option>
+                    <option value="Močenok"></option>
+                    <option value="Nitra"></option>
+                  </datalist>
+                  <p class="field__err" id="err-municipality"></p>
                 </div>
 
                 <div class="field">
-                  <label for="email">E-mail <span class="dim">(nepovinné)</span></label>
-                  <input type="email" id="email" name="email" autocomplete="email" />
-                  <p class="field__err" id="err-email"></p>
+                  <label for="address">Adresa alebo miesto použitia techniky</label>
+                  <input type="text" id="address" name="address" placeholder="Ulica a číslo domu" autocomplete="street-address" required />
+                  <p class="field__err" id="err-address"></p>
                 </div>
 
                 <div class="field">
@@ -676,33 +747,33 @@
                 </div>
 
                 <div class="checks">
-                  <label class="check" id="check-power">
-                    <input type="checkbox" id="power" name="power" />
-                    <span>
-                      Mám zásuvku 230 V do 20 metrov od miesta premietania.
-                      <small>Predlžovačku dostaneš v balení.</small>
-                    </span>
+                  <label class="check" id="check-adult">
+                    <input type="checkbox" id="adult" name="adult" />
+                    <span>Som plnoletá osoba a preberám zodpovednosť za zapožičané vybavenie.</span>
                   </label>
-                  <label class="check" id="check-garden">
-                    <input type="checkbox" id="garden" name="garden" />
-                    <span>
-                      Mám rovnú plochu aspoň 6 × 4 metre.
-                      <small>Tráva aj dlažba sú v poriadku.</small>
-                    </span>
+                  <label class="check" id="check-manual">
+                    <input type="checkbox" id="manual" name="manual" />
+                    <span>Techniku budem používať podľa návodu a iba za vhodných poveternostných podmienok.</span>
                   </label>
-                  <label class="check" id="check-wifi">
-                    <input type="checkbox" id="wifi" name="wifi" />
+                  <label class="check" id="check-content">
+                    <input type="checkbox" id="content" name="content" />
                     <span>
-                      Mám v záhrade Wi-Fi. <span class="dim">(nepovinné)</span>
-                      <small>Bez Wi-Fi to funguje tiež, film pustíš z USB alebo notebooku.</small>
+                      Beriem na vedomie, že zodpovedám za výber a oprávnené použitie
+                      premietaného obsahu.
+                      <small><a class="link" href="#licencie">Čo to znamená</a></small>
                     </span>
                   </label>
                   <label class="check" id="check-terms">
                     <input type="checkbox" id="terms" name="terms" />
                     <span>
-                      Prečítal som si <a class="link" href="#pravidla">pravidlá zapožičania</a>
-                      a súhlasím s nimi.
-                      <small>Technika je súkromná a požičiava sa na vlastnú zodpovednosť.</small>
+                      Súhlasím s <a class="link" href="#podmienky">podmienkami zapožičania</a>.
+                    </span>
+                  </label>
+                  <label class="check" id="check-privacy">
+                    <input type="checkbox" id="privacy" name="privacy" />
+                    <span>
+                      Oboznámil som sa s informáciami o
+                      <a class="link" href="#sukromie">spracúvaní osobných údajov</a>.
                     </span>
                   </label>
                 </div>
@@ -727,89 +798,221 @@
         </div>
       </section>
 
-      <!-- ================================================== PRAVIDLÁ -->
-      <section class="section" id="pravidla">
+      <!-- ================================================== INICIÁTOR -->
+      <section class="section" id="iniciator">
         <div class="wrap">
-          <p class="eyebrow"><b>05</b> Pravidlá a počasie</p>
+          <p class="eyebrow"><b>06</b> Iniciátor projektu</p>
+          <div class="initiator">
+            <div class="initiator__who reveal">
+              <h2 class="h-section">Ing. Andrej <i>Práznovský</i></h2>
+              <p class="meta initiator__role">
+                Kandidát na starostu obce Veľké Zálužie<br />
+                Kandidát na poslanca Zastupiteľstva Nitrianskeho samosprávneho kraja
+              </p>
+            </div>
+            <div class="initiator__text">
+              <p class="lede reveal">
+                Myšlienka projektu vznikla na základe skúseností s komunitným
+                premietaním. Vybavenie, ktoré som využil aj pri premietaní v knižnici,
+                je z väčšej časti moje súkromné vybavenie.
+              </p>
+              <p class="reveal">
+                Rozhodol som sa, že ho sprístupním aj ďalším rodinám a obyvateľom, aby
+                mohlo slúžiť pri spoločných letných večeroch.
+              </p>
+              <p class="reveal">
+                Mojím cieľom je prepájať ľudí, nápady a konkrétne riešenia, ktoré môžu
+                prispieť k rozvoju Veľkého Zálužia a celého regiónu.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================================================== PRÍSPEVOK -->
+      <section class="section" id="prispevok">
+        <div class="wrap">
+          <p class="eyebrow"><b>07</b> Dobrovoľný príspevok na rozvoj komunity</p>
+
+          <div class="give">
+            <div class="give__text">
+              <h2 class="h-section reveal">Zapožičanie je <i>zadarmo</i></h2>
+              <p class="lede reveal">
+                Za zapožičanie vybavenia nie je stanovený povinný poplatok.
+              </p>
+              <p class="reveal">
+                Tento projekt však nie je iba o jednom filmovom večere. Jeho cieľom je
+                prepájať ľudí, podporovať komunitný život a pomáhať vytvárať ďalšie
+                konkrétne projekty pre Veľké Zálužie a región.
+              </p>
+              <p class="reveal">
+                Každého, kto môže a chce túto myšlienku podporiť, preto prosíme, aby
+                zvážil dobrovoľný príspevok na účet občianskeho združenia
+                <b>Šport Veľké Zálužie</b>. Každý príspevok pomáha vytvárať priestor na
+                realizáciu ďalších komunitných, športových a rozvojových aktivít.
+              </p>
+
+              <ul class="give__uses reveal">
+                <li>komunitný život</li>
+                <li>šport</li>
+                <li>cestovný ruch</li>
+                <li>rozvoj regiónu</li>
+                <li>rozhľadňa <span class="dim">(pripravovaný zámer)</span></li>
+                <li>cyklotrasa v katastri obce <span class="dim">(pripravovaný zámer)</span></li>
+              </ul>
+
+              <p class="give__disclaimer reveal">
+                Výšku dobrovoľného príspevku si určuje každý sám. Príspevok nie je
+                podmienkou rezervácie ani potvrdenia termínu a nemá vplyv na poradie
+                alebo pridelenie vybavenia.
+              </p>
+            </div>
+
+            <div class="give__panel reveal">
+              <div class="give__amounts" role="group" aria-label="Návrh výšky príspevku">
+                <button type="button" class="amount" data-amount="10">10 €</button>
+                <button type="button" class="amount" data-amount="20">20 €</button>
+                <button type="button" class="amount" data-amount="50">50 €</button>
+                <label class="amount amount--own">
+                  <span class="sr-only">Vlastná suma v eurách</span>
+                  <input type="number" id="giveAmount" min="1" max="10000" step="1"
+                         inputmode="decimal" placeholder="vlastná" />
+                  <span aria-hidden="true">€</span>
+                </label>
+              </div>
+
+              <figure class="give__qr">
+                <div id="giveQr" class="give__qr-box" role="img"
+                     aria-label="QR kód na platbu podľa štandardu PAY by square"></div>
+                <figcaption class="meta">Naskenuj v bankovej aplikácii</figcaption>
+              </figure>
+
+              <dl class="give__account">
+                <dt>Príjemca</dt>
+                <dd data-oz="name">Šport Veľké Zálužie</dd>
+                <dt>IBAN</dt>
+                <dd class="give__iban">
+                  <span id="giveIban" data-oz="iban">SK64 0900 0000 0052 2443 0491</span>
+                  <button type="button" class="act" id="copyIban">Skopírovať</button>
+                </dd>
+                <dt>Správa</dt>
+                <dd data-oz="note">Dobrovoľný príspevok – komunitné projekty</dd>
+              </dl>
+
+              <a class="btn give__cta" id="givePay" href="#" target="_blank" rel="noopener">
+                Podporiť komunitné projekty
+                <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
+                  <path d="M1 7h11M7.5 2.5 12 7l-4.5 4.5" fill="none" stroke="currentColor"
+                        stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </a>
+              <p class="form__note">
+                Otvorí platobnú stránku payme.sk s predvyplneným účtom. Suma aj správa
+                sa dajú pred odoslaním kedykoľvek zmeniť.
+              </p>
+            </div>
+          </div>
+
+          <div class="org reveal">
+            <h3>Občianske združenie</h3>
+            <dl class="org__facts">
+              <div><dt>Názov</dt><dd data-oz="name">Šport Veľké Zálužie</dd></div>
+              <div><dt>Sídlo</dt><dd data-oz="address">Cintorínska 411/26, 951 35 Veľké Zálužie</dd></div>
+              <div><dt>IČO</dt><dd data-oz="ico">55954138</dd></div>
+              <div><dt>Právna forma</dt><dd data-oz="form">občianske združenie</dd></div>
+              <div><dt>Banka</dt><dd data-oz="bank">Slovenská sporiteľňa</dd></div>
+              <div><dt>IBAN</dt><dd data-oz="iban">SK64 0900 0000 0052 2443 0491</dd></div>
+              <div class="org__wide">
+                <dt>Registrácia</dt>
+                <dd data-oz="registration">
+                  Ministerstvo vnútra Slovenskej republiky, 22. 12. 2023,
+                  číslo VVS/1-900/90-68646-1
+                </dd>
+              </div>
+            </dl>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================ ZODPOVEDNOSŤ ZA OBSAH -->
+      <section class="section section--tight" id="licencie">
+        <div class="wrap">
+          <p class="eyebrow"><b>08</b> Zodpovednosť za premietaný obsah</p>
+          <div class="cols">
+            <h2 class="h-section reveal">Film si <i>vyberáš</i> ty</h2>
+            <div class="cols__body">
+              <p class="lede reveal">
+                Záujemca si premietaný obsah vyberá a zabezpečuje samostatne.
+                Poskytovateľ zapožičiava iba technické vybavenie a neposkytuje filmy,
+                televízne vysielanie, používateľské účty ani licencie na premietanie.
+              </p>
+              <p class="reveal">
+                Záujemca zodpovedá za to, že používa premietaný obsah v súlade
+                s platnými právnymi predpismi a podmienkami príslušnej platformy alebo
+                služby.
+              </p>
+              <p class="reveal">
+                Pri premietaní určenom verejnosti alebo širšiemu okruhu osôb môže byť
+                potrebné zabezpečiť príslušné licencie, súhlasy alebo licenčné poplatky.
+                Za ich preverenie a zabezpečenie zodpovedá organizátor premietania.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================================================== PODMIENKY -->
+      <section class="section" id="podmienky">
+        <div class="wrap">
+          <p class="eyebrow"><b>09</b> Podmienky zapožičania</p>
           <div class="rules">
             <div class="rules__head">
-              <h2 class="h-section reveal">Sedem <i>viet,</i> nič viac</h2>
+              <h2 class="h-section reveal">Dohoda medzi <i>susedmi</i></h2>
               <p class="dim reveal" style="margin-top: 1.5rem">
-                Žiadna zmluva, žiadne poplatky. Len dohoda medzi susedmi, aby to vydržalo čo
-                najviac letám.
+                Žiadna zmluva, žiadne poplatky. Len pravidlá, ktoré držia techniku
+                v prevádzke čo najviac letám.
               </p>
             </div>
 
             <dl class="rules__list">
-              <div class="reveal">
-                <dt></dt>
-                <dd>
-                  <b>Len pre Veľké Zálužie</b>
-                  Adresa musí byť v obci. Preto ju v žiadosti pýtam a preto si ju overujem.
-                </dd>
-              </div>
-              <div class="reveal">
-                <dt></dt>
-                <dd>
-                  <b>Jeden termín na rodinu za sezónu</b>
-                  Ak zostanú voľné termíny aj na konci leta, rád požičiam aj druhýkrát.
-                </dd>
-              </div>
-              <div class="reveal">
-                <dt></dt>
-                <dd>
-                  <b>Prevzatie o 17:00, vrátenie do 10:00</b>
-                  Popoludní si to vyzdvihneš, na druhý deň ráno vrátiš. Ak ti čas nesedí,
-                  napíš to do poznámky.
-                </dd>
-              </div>
-              <div class="reveal">
-                <dt></dt>
-                <dd>
-                  <b>Dospelý má techniku na starosti</b>
-                  Projektor ani ventilátor nenechávaj bez dozoru a plátno nikdy neukotvené.
-                </dd>
-              </div>
-              <div class="reveal">
-                <dt></dt>
-                <dd>
-                  <b>Po 22:00 stíš zvuk</b>
-                  Nočný pokoj platí aj na záhrade. Susedom to za jeden film stojí.
-                </dd>
-              </div>
-              <div class="reveal">
-                <dt></dt>
-                <dd>
-                  <b>Bežné opotrebenie neriešim</b>
-                  Ak sa niečo pokazí samo, nič neplatíš. Len mi to prosím povedz pri vrátení,
-                  nech to stihnem opraviť pre ďalších.
-                </dd>
-              </div>
-              <div class="reveal">
-                <dt></dt>
-                <dd>
-                  <b>Zrušenie aspoň dva dni vopred</b>
-                  Termín tak stihne dostať niekto ďalší. Stačí jedna správa.
-                </dd>
-              </div>
+              <div class="reveal"><dt></dt><dd><b>Vybavenie preberá plnoletá osoba</b>
+                Tá zaň nesie zodpovednosť po celý čas zapožičania.</dd></div>
+              <div class="reveal"><dt></dt><dd><b>Technika sa používa iba podľa návodu</b>
+                Návod je v kufri navrchu, s obrázkami ku každému kroku.</dd></div>
+              <div class="reveal"><dt></dt><dd><b>Plátno musí byť riadne upevnené</b>
+                Štyri kolíky a napnuté lanká, aj za bezvetria.</dd></div>
+              <div class="reveal"><dt></dt><dd><b>Nepoužívať v daždi ani silnom vetre</b>
+                Pri zhoršení počasia premietanie ukonči a techniku odlož.</dd></div>
+              <div class="reveal"><dt></dt><dd><b>Zariadenia chráň pred vodou a vlhkosťou</b>
+                Projektor a reproduktor nesmú zmoknúť ani stáť v mokrej tráve.</dd></div>
+              <div class="reveal"><dt></dt><dd><b>Techniku nepožičiavaj ďalej</b>
+                Zapožičanie platí pre osobu uvedenú v žiadosti a pre uvedenú adresu.</dd></div>
+              <div class="reveal"><dt></dt><dd><b>Za škodu z nesprávneho používania zodpovedá používateľ</b>
+                Bežné opotrebenie neriešim, poškodenie z nedbalosti áno.</dd></div>
+              <div class="reveal"><dt></dt><dd><b>Vybavenie sa vracia kompletné, čisté a suché</b>
+                Ak v noci padla rosa, nechaj plátno dopoludnia rozložené a dones ho neskôr.</dd></div>
+              <div class="reveal"><dt></dt><dd><b>Poškodenie alebo poruchu oznám bezodkladne</b>
+                Nič sa nedeje, len to potrebujem stihnúť opraviť pre ďalších.</dd></div>
+              <div class="reveal"><dt></dt><dd><b>Dodržiavaj nočný pokoj a miestne pravidlá</b>
+                Po 22:00 stíš zvuk. Susedom to za jeden film stojí.</dd></div>
+              <div class="reveal"><dt></dt><dd><b>Za premietaný obsah a licencie zodpovedá používateľ</b>
+                Podrobnosti sú v sekcii vyššie.</dd></div>
             </dl>
           </div>
 
           <div class="weather reveal">
             <svg class="weather__icon" viewBox="0 0 64 64" fill="none" aria-hidden="true">
-              <path
-                d="M20 40a11 11 0 0 1 .8-21.9 15 15 0 0 1 28.4 4.6A9.6 9.6 0 0 1 47 40z"
-                stroke="currentColor"
-                stroke-width="2.4"
-                stroke-linejoin="round"
-              />
-              <path d="M24 47l-3 9M34 47l-3 9M44 47l-3 9" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" opacity="0.6" />
+              <path d="M20 40a11 11 0 0 1 .8-21.9 15 15 0 0 1 28.4 4.6A9.6 9.6 0 0 1 47 40z"
+                    stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" />
+              <path d="M24 47l-3 9M34 47l-3 9M44 47l-3 9" stroke="currentColor"
+                    stroke-width="2.4" stroke-linecap="round" opacity="0.6" />
             </svg>
             <div>
               <h3>Keď hlásia dážď alebo vietor</h3>
               <p class="dim" style="max-width: 60ch">
-                Plátno je nafukovacie a projektor nie je vodotesný. Pri daždi alebo vetre nad
-                40 km/h sa nepremieta. A nie je to problém, na to slúži náhradný termín.
+                Plátno je nafukovacie a projektor nie je vodotesný. Pri daždi alebo vetre
+                nad 40 km/h sa nepremieta. A nie je to problém, na to slúži náhradný
+                termín.
               </p>
               <div class="weather__steps">
                 <div>
@@ -820,21 +1023,107 @@
                 <div>
                   <span class="meta">Presun</span>
                   <b>Ide sa na náhradný termín</b>
-                  <p>Ten, ktorý si uviedol v žiadosti. Ak už nesedí, nájdeme spolu iný.</p>
+                  <p>Ten, ktorý si uviedol v žiadosti. Pôvodný deň sa vráti do kalendára.</p>
                 </div>
                 <div>
                   <span class="meta">Počas premietania</span>
                   <b>Vypni a zlož do sucha</b>
-                  <p>
-                    Ak začne pršať, vytiahni projektor zo zásuvky a odnes ho pod strechu.
-                    Plátno vydrží, elektronika nie.
-                  </p>
+                  <p>Vytiahni projektor zo zásuvky a odnes ho pod strechu. Plátno vydrží, elektronika nie.</p>
                 </div>
               </div>
             </div>
           </div>
         </div>
       </section>
+
+      <!-- ================================================== ČASTÉ OTÁZKY -->
+      <section class="section section--tight" id="faq">
+        <div class="wrap">
+          <p class="eyebrow"><b>10</b> Časté otázky</p>
+          <div class="cols">
+            <h2 class="h-section reveal">Na čo sa <i>pýtate</i></h2>
+            <div class="faq">
+              <details class="reveal">
+                <summary>Naozaj sa za to nič neplatí?</summary>
+                <p>
+                  Naozaj. Zapožičanie je bezplatné a bez zálohy. Dobrovoľný príspevok
+                  občianskemu združeniu je vítaný, ale nie je podmienkou a nemá vplyv na
+                  pridelenie termínu.
+                </p>
+              </details>
+              <details class="reveal">
+                <summary>Bývam v inej obci. Môžem si techniku požičať?</summary>
+                <p>
+                  Počas úvodnej fázy majú prednosť obyvatelia Veľkého Zálužia. Termíny
+                  otvorené aj pre okolité obce sú v kalendári označené. Ak žiadny taký
+                  nevidíš, ozvi sa mi a dohodneme sa individuálne.
+                </p>
+              </details>
+              <details class="reveal">
+                <summary>Aký film si môžem pustiť?</summary>
+                <p>
+                  Obsah si vyberáš a zabezpečuješ sám. Požičiavam iba techniku, nie filmy
+                  ani prístup k službám. Pri premietaní pre širší okruh ľudí môžu byť
+                  potrebné licencie.
+                </p>
+              </details>
+              <details class="reveal">
+                <summary>Čo ak bude pršať?</summary>
+                <p>
+                  Deň vopred sa ti ozvem a presunieme premietanie na náhradný termín,
+                  ktorý si uviedol v žiadosti. Pôvodný deň sa vráti do kalendára pre
+                  niekoho ďalšieho.
+                </p>
+              </details>
+              <details class="reveal">
+                <summary>Zvládnem to postaviť sám?</summary>
+                <p>
+                  Áno. Zapojenie je jednoduché a spravidla nezaberie viac ako 10 minút.
+                  V kufri je prehľadný návod s obrázkami ku každému kroku.
+                </p>
+              </details>
+              <details class="reveal">
+                <summary>Potrebujem Wi-Fi?</summary>
+                <p>
+                  Ak chceš premietať z internetu, áno. Z USB kľúča alebo z notebooku cez
+                  HDMI to funguje aj bez pripojenia.
+                </p>
+              </details>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================================================== SÚKROMIE -->
+      <section class="section section--tight" id="sukromie">
+        <div class="wrap">
+          <p class="eyebrow"><b>11</b> Ochrana osobných údajov</p>
+          <div class="cols">
+            <h2 class="h-section reveal">Čo robím s <i>údajmi</i></h2>
+            <div class="cols__body">
+              <p class="reveal">
+                Údaje z formulára používam výhradne na vybavenie rezervácie, komunikáciu
+                s tebou, odovzdanie a vrátenie techniky, riešenie zmeny termínu a na
+                prípadné riešenie poškodenia alebo nevrátenia vybavenia.
+              </p>
+              <p class="reveal">
+                Marketingové správy neposielam. Údaje neposkytujem tretím stranám a po
+                skončení sezóny ich mažem alebo anonymizujem.
+              </p>
+              <p class="reveal">
+                Kedykoľvek si môžeš vyžiadať prístup k svojim údajom, ich opravu alebo
+                vymazanie — stačí napísať na kontaktný e-mail nižšie a vybavím to.
+              </p>
+              <p class="form__note reveal">
+                Prevádzkovateľom spracúvania je iniciátor projektu uvedený v kontakte.
+                Právnym základom je plnenie dohody o zapožičaní a oprávnený záujem na
+                ochrane zapožičaného majetku.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
     </main>
 
     <footer class="footer">
@@ -880,7 +1169,7 @@
 
         <div class="footer__bar">
           <span class="meta">© <span id="year">2026</span> Letné kino Veľké Zálužie</span>
-          <span class="meta">Vyrobené pre susedov, nie pre kliky</span>
+          <span class="meta">Súkromné vybavenie · bezplatné zapožičanie</span>
         </div>
       </div>
     </footer>
@@ -890,6 +1179,7 @@
     <script src="/vendor/gsap/SplitText.min.js"></script>
     <script src="/vendor/gsap/DrawSVGPlugin.min.js"></script>
     <script src="/assets/js/booking.js"></script>
+    <script src="/assets/js/donation.js"></script>
     <script src="/assets/js/motion.js"></script>
   </body>
 </html>

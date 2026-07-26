@@ -5,7 +5,10 @@ import express from 'express';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { db, getSettings, setSettings, SETTING_KEYS } from './db.js';
+import QRCode from 'qrcode';
+import { encode as encodeBySquare, PaymentOptions, CurrencyCode } from 'bysquare/pay';
+
+import { db, getSettings, setSettings, SETTING_KEYS, SCOPES } from './db.js';
 import { addDays, isIsoDate, today } from './dates.js';
 import { buildAvailability } from './availability.js';
 import { validateReservation } from './validate.js';
@@ -74,11 +77,12 @@ app.get('/api/availability', (req, res) => {
     settings: {
       pickupTime: settings.pickupTime,
       returnTime: settings.returnTime,
-      maxPeople: settings.maxPeople,
       leadDays: settings.leadDays,
       seasonStart: settings.seasonStart,
       seasonEnd: settings.seasonEnd,
       paused: settings.paused,
+      defaultScope: settings.defaultScope,
+      homeMunicipality: settings.homeMunicipality,
     },
   });
 });
@@ -101,12 +105,12 @@ const nextRef = db.prepare(
 );
 const insertReservation = db.prepare(`
   INSERT INTO reservations
-    (ref, date, backup_date, name, phone, email, address, people, note,
-     confirm_power, confirm_wifi, confirm_garden, confirm_terms,
+    (ref, date, backup_date, name, phone, email, municipality, address, note,
+     confirm_adult, confirm_manual, confirm_content, confirm_terms, confirm_privacy,
      status, created_at, updated_at)
   VALUES
-    (@ref, @date, @backupDate, @name, @phone, @email, @address, @people, @note,
-     @power, @wifi, @garden, @terms,
+    (@ref, @date, @backupDate, @name, @phone, @email, @municipality, @address, @note,
+     @adult, @manual, @content, @terms, @privacy,
      'pending', @now, @now)
 `);
 
@@ -150,7 +154,51 @@ app.post('/api/reservations', reservationBurstLimiter, (req, res) => {
     pickupTime: settings.pickupTime,
     returnTime: settings.returnTime,
     returnDate: addDays(clean.date, 1),
+    oz: settings.oz.name,
   });
+});
+
+
+/* --------------------------------------------------- dobrovoľný príspevok */
+
+/*
+ * QR podľa štandardu PAY by square, teda ten, ktorý čítajú slovenské bankové
+ * aplikácie. Suma je voliteľná — bez nej si ju človek doplní v banke sám,
+ * čo je presne zámer: príspevok nemá byť predpísaný.
+ */
+function buildPayQr(amount) {
+  const { oz } = getSettings();
+  const payment = {
+    type: PaymentOptions.PaymentOrder,
+    bankAccounts: [{ iban: oz.iban.replace(/\s+/g, '') }],
+    currencyCode: CurrencyCode.EUR,
+    paymentNote: oz.note,
+    beneficiary: { name: oz.name },
+  };
+  if (amount) payment.amount = amount;
+  return encodeBySquare({ payments: [payment] });
+}
+
+app.get('/api/donation', async (req, res) => {
+  const { oz } = getSettings();
+  const raw = Number(req.query.amount);
+  // Prázdna, nulová alebo nezmyselná suma znamená QR bez predpísanej sumy.
+  const amount = Number.isFinite(raw) && raw > 0 && raw <= 10000 ? Math.round(raw * 100) / 100 : null;
+
+  let qr = null;
+  try {
+    qr = await QRCode.toString(buildPayQr(amount), {
+      type: 'svg',
+      errorCorrectionLevel: 'M',
+      margin: 0,
+      color: { dark: '#f2ece0', light: '#00000000' },
+    });
+  } catch (err) {
+    console.error('[qr]', err);
+  }
+
+  res.set('Cache-Control', 'public, max-age=300');
+  res.json({ oz, amount, qr });
 });
 
 /* ------------------------------------------------------------------ admin */
@@ -180,7 +228,7 @@ app.get('/api/admin/session', (req, res) => {
   res.json({ authed: isAuthed(req) });
 });
 
-const VALID_STATUSES = ['pending', 'approved', 'rejected', 'cancelled', 'done'];
+const VALID_STATUSES = ['pending', 'approved', 'rejected', 'cancelled', 'done', 'moved'];
 
 app.get('/api/admin/reservations', requireAdmin, (req, res) => {
   const status = VALID_STATUSES.includes(req.query.status) ? req.query.status : null;
@@ -286,6 +334,130 @@ app.delete('/api/admin/blackouts/:id', requireAdmin, (req, res) => {
   res.json({ ok: true });
 });
 
+
+/* ----------------------------------------- pravidlá termínov a blokovanie */
+
+app.get('/api/admin/slot-rules', requireAdmin, (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  res.json({ rules: db.prepare('SELECT * FROM slot_rules ORDER BY date ASC').all() });
+});
+
+app.post('/api/admin/slot-rules', requireAdmin, (req, res) => {
+  const { date, scope } = req.body || {};
+  if (!isIsoDate(date)) {
+    res.status(400).json({ error: 'Neplatný dátum.' });
+    return;
+  }
+  if (!SCOPES.includes(scope)) {
+    res.status(400).json({ error: 'Neznáme určenie termínu.' });
+    return;
+  }
+  db.prepare(
+    'INSERT INTO slot_rules (date, scope, created_at) VALUES (?, ?, ?) ON CONFLICT(date) DO UPDATE SET scope = excluded.scope'
+  ).run(date, scope, new Date().toISOString());
+  res.status(201).json({ ok: true });
+});
+
+app.delete('/api/admin/slot-rules/:date', requireAdmin, (req, res) => {
+  const info = db.prepare('DELETE FROM slot_rules WHERE date = ?').run(req.params.date);
+  if (info.changes === 0) {
+    res.status(404).json({ error: 'Pravidlo sa nenašlo.' });
+    return;
+  }
+  res.json({ ok: true });
+});
+
+app.get('/api/admin/blocklist', requireAdmin, (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  res.json({ entries: db.prepare('SELECT * FROM blocklist ORDER BY created_at DESC').all() });
+});
+
+app.post('/api/admin/blocklist', requireAdmin, (req, res) => {
+  const value = typeof req.body?.value === 'string' ? req.body.value.trim().toLowerCase() : '';
+  if (value.length < 5) {
+    res.status(400).json({ error: 'Zadaj telefón alebo e-mail.' });
+    return;
+  }
+  const reason = typeof req.body?.reason === 'string' ? req.body.reason.slice(0, 200) : null;
+  db.prepare(
+    'INSERT INTO blocklist (value, reason, created_at) VALUES (?, ?, ?) ON CONFLICT(value) DO UPDATE SET reason = excluded.reason'
+  ).run(value, reason, new Date().toISOString());
+  res.status(201).json({ ok: true });
+});
+
+app.delete('/api/admin/blocklist/:id', requireAdmin, (req, res) => {
+  const info = db.prepare('DELETE FROM blocklist WHERE id = ?').run(Number(req.params.id));
+  if (info.changes === 0) {
+    res.status(404).json({ error: 'Záznam sa nenašiel.' });
+    return;
+  }
+  res.json({ ok: true });
+});
+
+/* --------------------------------------- presun pre počasie a odovzdávanie */
+
+/*
+ * Presun na náhradný termín. Pôvodný deň sa tým uvoľní späť do kalendára,
+ * takže o neho môže požiadať niekto ďalší.
+ */
+app.post('/api/admin/reservations/:id/move', requireAdmin, (req, res) => {
+  const id = Number(req.params.id);
+  const row = db.prepare('SELECT * FROM reservations WHERE id = ?').get(id);
+  if (!row) {
+    res.status(404).json({ error: 'Rezervácia sa nenašla.' });
+    return;
+  }
+  const target = isIsoDate(req.body?.date) ? req.body.date : row.backup_date;
+  if (!isIsoDate(target)) {
+    res.status(400).json({ error: 'Táto rezervácia nemá náhradný termín. Zadaj dátum.' });
+    return;
+  }
+  const clash = db
+    .prepare(
+      "SELECT ref FROM reservations WHERE date = ? AND id <> ? AND status IN ('pending','approved')"
+    )
+    .get(target, id);
+  if (clash) {
+    res.status(409).json({ error: `Na ${target} je už aktívna rezervácia ${clash.ref}.` });
+    return;
+  }
+
+  db.prepare(
+    `UPDATE reservations
+        SET moved_from = IFNULL(moved_from, date), date = ?, backup_date = NULL, updated_at = ?
+      WHERE id = ?`
+  ).run(target, new Date().toISOString(), id);
+  res.json({ reservation: db.prepare('SELECT * FROM reservations WHERE id = ?').get(id) });
+});
+
+/* Odovzdávací a preberací zoznam. Položky sa ukladajú ako JSON pole názvov. */
+app.post('/api/admin/reservations/:id/handover', requireAdmin, (req, res) => {
+  const id = Number(req.params.id);
+  const row = db.prepare('SELECT * FROM reservations WHERE id = ?').get(id);
+  if (!row) {
+    res.status(404).json({ error: 'Rezervácia sa nenašla.' });
+    return;
+  }
+  const phase = req.body?.phase === 'return' ? 'return' : 'handout';
+  const items = Array.isArray(req.body?.items)
+    ? JSON.stringify(req.body.items.slice(0, 40).map((v) => String(v).slice(0, 60)))
+    : null;
+  const note =
+    typeof req.body?.conditionNote === 'string' ? req.body.conditionNote.slice(0, 1000) : row.condition_note;
+  const stamp = new Date().toISOString();
+
+  if (phase === 'handout') {
+    db.prepare(
+      'UPDATE reservations SET handout_at = ?, handout_items = ?, condition_note = ?, updated_at = ? WHERE id = ?'
+    ).run(stamp, items, note, stamp, id);
+  } else {
+    db.prepare(
+      'UPDATE reservations SET return_at = ?, return_items = ?, condition_note = ?, updated_at = ? WHERE id = ?'
+    ).run(stamp, items, note, stamp, id);
+  }
+  res.json({ reservation: db.prepare('SELECT * FROM reservations WHERE id = ?').get(id) });
+});
+
 app.get('/api/admin/settings', requireAdmin, (req, res) => {
   res.set('Cache-Control', 'no-store');
   res.json({ settings: getSettings() });
@@ -304,6 +476,14 @@ app.patch('/api/admin/settings', requireAdmin, (req, res) => {
     res.status(400).json({ error: 'Koniec sezóny zadaj v tvare MM-DD.' });
     return;
   }
+  if (patch.default_scope && !SCOPES.includes(patch.default_scope)) {
+    res.status(400).json({ error: 'Neznáme predvolené určenie termínov.' });
+    return;
+  }
+  if (patch.oz_iban && !/^SK\d{22}$/.test(String(patch.oz_iban).replace(/\s+/g, ''))) {
+    res.status(400).json({ error: 'IBAN musí byť slovenský, v tvare SK a 22 číslic.' });
+    return;
+  }
   res.json({ settings: setSettings(patch) });
 });
 
@@ -311,14 +491,18 @@ const CSV_COLUMNS = [
   ['ref', 'Značka'],
   ['date', 'Termín'],
   ['backup_date', 'Náhradný termín'],
+  ['moved_from', 'Presunuté z'],
   ['status', 'Stav'],
   ['name', 'Meno'],
   ['phone', 'Telefón'],
   ['email', 'E-mail'],
+  ['municipality', 'Obec'],
   ['address', 'Adresa'],
-  ['people', 'Osôb'],
   ['note', 'Poznámka'],
   ['admin_note', 'Interná poznámka'],
+  ['handout_at', 'Prevzaté'],
+  ['return_at', 'Vrátené'],
+  ['condition_note', 'Stav vybavenia'],
   ['created_at', 'Vytvorené'],
 ];
 

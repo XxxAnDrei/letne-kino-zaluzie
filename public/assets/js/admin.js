@@ -18,6 +18,7 @@
     rejected: "Zamietnuté",
     cancelled: "Zrušené",
     done: "Vybavené",
+    moved: "Presunuté",
   };
   var FILTERS = [
     ["", "Všetky"],
@@ -26,6 +27,13 @@
     ["done", "Vybavené"],
     ["rejected", "Zamietnuté"],
     ["cancelled", "Zrušené"],
+    ["moved", "Presunuté"],
+  ];
+
+  /* Odovzdávací zoznam — predvyplní sa pri prevzatí aj vrátení. */
+  var KIT = [
+    "plátno", "ventilátor", "projektor", "reproduktor", "diaľkové ovládače",
+    "káble", "predlžovací kábel", "upevňovacie laná", "kolíky", "návod",
   ];
 
   var $ = function (id) { return document.getElementById(id); };
@@ -147,8 +155,100 @@
   function loadAll() {
     loadReservations();
     loadBlackouts();
+    loadSlotRules();
+    loadBlocklist();
     loadSettings();
   }
+
+  /* ------------------------------------------------- určenie termínov */
+
+  var SCOPE_LABEL = { zaluzie: "iba Veľké Zálužie", all: "aj okolité obce", approval: "po dohode" };
+
+  function loadSlotRules() {
+    api("/api/admin/slot-rules")
+      .then(function (data) {
+        $("srList").innerHTML = data.rules.length
+          ? data.rules
+              .map(function (r) {
+                return (
+                  "<li><time>" + esc(r.date) + "</time><span>" +
+                  esc(SCOPE_LABEL[r.scope] || r.scope) +
+                  '</span><button type="button" data-sr="' + esc(r.date) +
+                  '" aria-label="Zrušiť pravidlo">×</button></li>'
+                );
+              })
+              .join("")
+          : "<li><span>Všetky termíny podľa predvoleného nastavenia.</span></li>";
+      })
+      .catch(function () {});
+  }
+
+  $("srAdd").addEventListener("click", function () {
+    var date = $("srDate").value;
+    if (!date) return toast("Vyber dátum.", true);
+    api("/api/admin/slot-rules", {
+      method: "POST",
+      body: JSON.stringify({ date: date, scope: $("srScope").value }),
+    })
+      .then(function () {
+        $("srDate").value = "";
+        toast("Určenie termínu uložené.");
+        loadSlotRules();
+      })
+      .catch(function (e) { if (e.message !== "odhlásené") toast(e.message, true); });
+  });
+
+  $("srList").addEventListener("click", function (event) {
+    var btn = event.target.closest("button[data-sr]");
+    if (!btn) return;
+    api("/api/admin/slot-rules/" + btn.dataset.sr, { method: "DELETE" })
+      .then(function () { toast("Pravidlo zrušené."); loadSlotRules(); })
+      .catch(function (e) { if (e.message !== "odhlásené") toast(e.message, true); });
+  });
+
+  /* --------------------------------------------------- blokované kontakty */
+
+  function loadBlocklist() {
+    api("/api/admin/blocklist")
+      .then(function (data) {
+        $("blList").innerHTML = data.entries.length
+          ? data.entries
+              .map(function (b) {
+                return (
+                  "<li><time>" + esc(b.value) + "</time><span>" + esc(b.reason || "") +
+                  '</span><button type="button" data-bl="' + b.id +
+                  '" aria-label="Odblokovať">×</button></li>'
+                );
+              })
+              .join("")
+          : "<li><span>Žiadne blokované kontakty.</span></li>";
+      })
+      .catch(function () {});
+  }
+
+  $("blAdd").addEventListener("click", function () {
+    var value = $("blValue").value.trim();
+    if (!value) return toast("Zadaj telefón alebo e-mail.", true);
+    api("/api/admin/blocklist", {
+      method: "POST",
+      body: JSON.stringify({ value: value, reason: $("blReason").value }),
+    })
+      .then(function () {
+        $("blValue").value = "";
+        $("blReason").value = "";
+        toast("Kontakt zablokovaný.");
+        loadBlocklist();
+      })
+      .catch(function (e) { if (e.message !== "odhlásené") toast(e.message, true); });
+  });
+
+  $("blList").addEventListener("click", function (event) {
+    var btn = event.target.closest("button[data-bl]");
+    if (!btn) return;
+    api("/api/admin/blocklist/" + btn.dataset.bl, { method: "DELETE" })
+      .then(function () { toast("Odblokované."); loadBlocklist(); })
+      .catch(function (e) { if (e.message !== "odhlásené") toast(e.message, true); });
+  });
 
   function loadReservations() {
     var params = new URLSearchParams();
@@ -201,16 +301,25 @@
 
   function renderRow(r) {
     var isPast = r.date < state.today;
-    // Wi-Fi je nepovinná, takže jej chýbanie sa nezvýrazňuje ako problém.
-    var flags =
-      '<span class="flag ' + (r.confirm_power ? "on" : "off") + '">elektrina</span>' +
-      '<span class="flag ' + (r.confirm_garden ? "on" : "off") + '">plocha</span>' +
-      '<span class="flag' + (r.confirm_wifi ? " on" : "") + '">wi-fi</span>';
+    var flags = [
+      ["plnoletosť", r.confirm_adult],
+      ["návod", r.confirm_manual],
+      ["obsah", r.confirm_content],
+      ["podmienky", r.confirm_terms],
+      ["gdpr", r.confirm_privacy],
+    ]
+      .map(function (f) {
+        return '<span class="flag ' + (f[1] ? "on" : "off") + '">' + f[0] + "</span>";
+      })
+      .join("");
+    if (r.handout_at) flags += '<span class="flag on">prevzaté</span>';
+    if (r.return_at) flags += '<span class="flag on">vrátené</span>';
 
     var notes = "";
     if (r.note) notes += "<b>Poznámka žiadateľa:</b> " + esc(r.note) + "<br />";
     if (r.backup_date) notes += "<b>Náhradný termín:</b> " + esc(longDate(r.backup_date)) + "<br />";
-    if (r.email) notes += "<b>E-mail:</b> " + esc(r.email);
+    if (r.moved_from) notes += "<b>Presunuté z:</b> " + esc(longDate(r.moved_from)) + "<br />";
+    if (r.condition_note) notes += "<b>Stav vybavenia:</b> " + esc(r.condition_note);
 
     return (
       '<article class="res" data-id="' + r.id + '">' +
@@ -225,8 +334,9 @@
           '<span class="res__name">' + esc(r.name) + "</span>" +
           '<div class="res__facts">' +
             '<a href="tel:' + esc(r.phone) + '">' + esc(r.phone) + "</a>" +
+            '<a href="mailto:' + esc(r.email) + '">' + esc(r.email) + "</a>" +
+            "<span>" + esc(r.municipality) + "</span>" +
             "<span>" + esc(r.address) + "</span>" +
-            "<span>" + esc(r.people) + " osôb</span>" +
           "</div>" +
           '<div class="res__flags">' + flags + "</div>" +
         "</div>" +
@@ -240,6 +350,9 @@
         '<button class="act act--no" data-do="rejected"' + (r.status === "rejected" ? " disabled" : "") + ">Zamietnuť</button>" +
         '<button class="act" data-do="cancelled"' + (r.status === "cancelled" ? " disabled" : "") + ">Zrušiť</button>" +
         '<button class="act" data-do="done"' + (r.status === "done" ? " disabled" : "") + ">Vybavené</button>" +
+        '<button class="act" data-move title="Preložiť na náhradný termín pri zlom počasí">Presunúť</button>' +
+        '<button class="act" data-hand="handout"' + (r.handout_at ? " disabled" : "") + ">Prevzatie</button>" +
+        '<button class="act" data-hand="return"' + (r.return_at ? " disabled" : "") + ">Vrátenie</button>" +
         '<input class="act act--note" data-note placeholder="Interná poznámka…" value="' + esc(r.admin_note || "") + '" />' +
         '<button class="act act--no" data-del title="Nenávratne zmazať">Zmazať</button>' +
       "</div>" +
@@ -277,6 +390,49 @@
       })
         .then(function () {
           toast("Stav zmenený na „" + STATUS[action.dataset.do] + "”.");
+          loadReservations();
+        })
+        .catch(function (e) { if (e.message !== "odhlásené") toast(e.message, true); });
+      return;
+    }
+
+    if (event.target.closest("button[data-move]")) {
+      var when = window.prompt(
+        "Presunúť na dátum (RRRR-MM-DD). Prázdne = náhradný termín zo žiadosti."
+      );
+      if (when === null) return;
+      api("/api/admin/reservations/" + id + "/move", {
+        method: "POST",
+        body: JSON.stringify(when.trim() ? { date: when.trim() } : {}),
+      })
+        .then(function (res) {
+          toast("Presunuté na " + res.reservation.date + ".");
+          loadReservations();
+        })
+        .catch(function (e) { if (e.message !== "odhlásené") toast(e.message, true); });
+      return;
+    }
+
+    var hand = event.target.closest("button[data-hand]");
+    if (hand) {
+      var phase = hand.dataset.hand;
+      var picked = window.prompt(
+        (phase === "handout" ? "Odovzdávané" : "Vrátené") +
+          " položky, oddelené čiarkou:",
+        KIT.join(", ")
+      );
+      if (picked === null) return;
+      var cond = window.prompt("Stav vybavenia alebo poznámka:", "") || "";
+      api("/api/admin/reservations/" + id + "/handover", {
+        method: "POST",
+        body: JSON.stringify({
+          phase: phase,
+          items: picked.split(",").map(function (v) { return v.trim(); }).filter(Boolean),
+          conditionNote: cond,
+        }),
+      })
+        .then(function () {
+          toast(phase === "handout" ? "Prevzatie zapísané." : "Vrátenie zapísané.");
           loadReservations();
         })
         .catch(function (e) { if (e.message !== "odhlásené") toast(e.message, true); });
@@ -364,11 +520,36 @@
         $("setReturn").value = s.returnTime;
         $("setLead").value = s.leadDays;
         $("setHorizon").value = s.horizonDays;
-        $("setMaxPeople").value = s.maxPeople;
+        $("setScope").value = s.defaultScope;
+        $("setHome").value = s.homeMunicipality;
         $("setPaused").checked = s.paused;
+        $("ozName").value = s.oz.name;
+        $("ozIban").value = s.oz.iban;
+        $("ozNote").value = s.oz.note;
+        $("ozIco").value = s.oz.ico;
+        $("ozBank").value = s.oz.bank;
+        $("ozAddress").value = s.oz.address;
+        $("ozRegistration").value = s.oz.registration;
       })
       .catch(function () {});
   }
+
+  $("ozSave").addEventListener("click", function () {
+    api("/api/admin/settings", {
+      method: "PATCH",
+      body: JSON.stringify({
+        oz_name: $("ozName").value,
+        oz_iban: $("ozIban").value.replace(/\s+/g, ""),
+        pay_note: $("ozNote").value,
+        oz_ico: $("ozIco").value,
+        oz_bank: $("ozBank").value,
+        oz_address: $("ozAddress").value,
+        oz_registration: $("ozRegistration").value,
+      }),
+    })
+      .then(function () { toast("Údaje združenia uložené."); })
+      .catch(function (e) { if (e.message !== "odhlásené") toast(e.message, true); });
+  });
 
   $("setSave").addEventListener("click", function () {
     api("/api/admin/settings", {
@@ -380,7 +561,8 @@
         return_time: $("setReturn").value,
         lead_days: $("setLead").value,
         horizon_days: $("setHorizon").value,
-        max_people: $("setMaxPeople").value,
+        default_scope: $("setScope").value,
+        home_municipality: $("setHome").value,
         paused: $("setPaused").checked ? "1" : "0",
       }),
     })

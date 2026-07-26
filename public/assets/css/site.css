@@ -1543,6 +1543,18 @@ textarea {
   margin: 0;
   color: var(--ivory);
 }
+.ticket__give {
+  margin-top: 0.4rem;
+  padding-top: 1rem;
+  border-top: 1px dashed color-mix(in oklab, var(--amber) 35%, transparent);
+  display: grid;
+  gap: 0.6rem;
+  justify-items: start;
+}
+.ticket__give p {
+  font-size: var(--step--1);
+  color: var(--ash);
+}
 .ticket__stamp {
   display: inline-flex;
   align-items: center;
@@ -1570,6 +1582,286 @@ textarea {
     transform: none;
   }
 }
+
+
+/* ------------------------------------------------ čo potrebuje záujemca */
+
+.needs {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: clamp(2rem, 5vh, 3.5rem) var(--gutter);
+  align-items: start;
+}
+.needs__head { grid-column: 1 / span 5; display: grid; gap: 1.25rem; }
+.needs__drawing { grid-column: 7 / span 6; margin: 0; display: grid; gap: 0.8rem; }
+.needs__drawing figcaption { justify-self: end; }
+.needs__list {
+  grid-column: 1 / -1;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
+  gap: 0;
+  border-top: 1px solid var(--line);
+}
+.needs__list li {
+  display: grid;
+  gap: 0.35rem;
+  align-content: start;
+  padding: clamp(1.1rem, 2.5vh, 1.6rem) clamp(1rem, 2vw, 1.75rem) clamp(1.4rem, 3vh, 2rem) 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+.needs__list b { font-weight: 600; color: var(--ivory); font-size: var(--step-0); }
+.needs__list p { font-size: var(--step--1); color: var(--ash); }
+@media (max-width: 900px) {
+  .needs__head, .needs__drawing { grid-column: 1 / -1; }
+}
+
+/* Upozornenie, ktoré nesmie zapadnúť — jediné miesto s výstražným tónom. */
+.notice {
+  margin-top: clamp(2.5rem, 6vh, 4rem);
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: clamp(1rem, 2.5vw, 1.75rem);
+  align-items: start;
+  padding: clamp(1.25rem, 3vw, 2rem);
+  border: 1px solid color-mix(in oklab, var(--ember) 40%, transparent);
+  background: color-mix(in oklab, var(--ember) 7%, transparent);
+  border-radius: 4px;
+}
+.notice__icon { width: clamp(26px, 3vw, 34px); color: var(--ember); flex: none; }
+.notice p { font-size: var(--step--1); max-width: 68ch; }
+
+/* ------------------------------------------------------------ iniciátor */
+
+.initiator {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: clamp(1.75rem, 4vh, 3rem) var(--gutter);
+  align-items: start;
+}
+.initiator__who { grid-column: 1 / span 5; }
+.initiator__role { margin-top: 1.25rem; line-height: 1.9; }
+.initiator__text {
+  grid-column: 7 / span 6;
+  display: grid;
+  gap: clamp(1.1rem, 2.5vh, 1.6rem);
+}
+@media (max-width: 900px) {
+  .initiator__who, .initiator__text { grid-column: 1 / -1; }
+}
+
+/* --------------------------------------------------- dobrovoľný príspevok */
+
+.give {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: clamp(2rem, 5vh, 3.5rem) var(--gutter);
+  align-items: start;
+}
+.give__text { grid-column: 1 / span 6; display: grid; gap: clamp(1.1rem, 2.5vh, 1.6rem); }
+.give__panel {
+  grid-column: 8 / span 5;
+  border: 1px solid color-mix(in oklab, var(--amber) 32%, transparent);
+  background: linear-gradient(to bottom, var(--night-850), var(--night-900));
+  border-radius: 4px;
+  padding: clamp(1.35rem, 3vw, 2rem);
+  display: grid;
+  gap: 1.25rem;
+}
+@media (max-width: 1000px) {
+  .give__text, .give__panel { grid-column: 1 / -1; }
+}
+
+.give__uses {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.give__uses li {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.3rem 0.8rem;
+  font-size: var(--step--1);
+  color: var(--ivory-dim);
+}
+.give__disclaimer {
+  font-size: var(--step--1);
+  color: var(--ash);
+  border-left: 1px solid var(--line);
+  padding-left: clamp(1rem, 2vw, 1.5rem);
+  max-width: 62ch;
+}
+
+.give__amounts { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.amount {
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ivory-dim);
+  border-radius: 999px;
+  padding: 0.5rem 1rem;
+  font-size: var(--step--1);
+  cursor: pointer;
+  transition: border-color 0.25s ease, color 0.25s ease, background 0.25s ease;
+}
+.amount:hover { border-color: var(--amber); color: var(--amber); }
+.amount[aria-pressed="true"] {
+  background: var(--amber);
+  border-color: var(--amber);
+  color: oklch(0.16 0.03 40);
+  font-weight: 600;
+}
+.amount--own { display: inline-flex; align-items: center; gap: 0.35rem; padding-block: 0.35rem; }
+.amount--own input {
+  width: 5.5rem;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  font-size: var(--step--1);
+  padding: 0.15rem 0;
+}
+.amount--own input:focus { outline: none; }
+.amount--own:focus-within { border-color: var(--amber); color: var(--amber); }
+
+.give__qr { margin: 0; display: grid; justify-items: center; gap: 0.6rem; }
+.give__qr-box {
+  width: min(190px, 60%);
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  padding: 0.75rem;
+  background: color-mix(in oklab, var(--night-950) 55%, transparent);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+}
+.give__qr-box svg { width: 100%; height: 100%; }
+
+.give__account { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 0.5rem 1rem; }
+.give__account dt {
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ash);
+  align-self: center;
+}
+.give__account dd { margin: 0; font-size: var(--step--1); color: var(--ivory); }
+.give__iban .act {
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ivory-dim);
+  padding: 0.3rem 0.7rem;
+  border-radius: 3px;
+  font-size: var(--step--2);
+  font-family: var(--font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: border-color 0.25s ease, color 0.25s ease;
+}
+.give__iban .act:hover,
+.give__iban .act:focus-visible {
+  border-color: var(--amber);
+  color: var(--amber);
+}
+.give__iban { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+.give__iban span { font-family: var(--font-mono); letter-spacing: 0.04em; }
+.give__cta { justify-self: start; }
+
+.org {
+  margin-top: clamp(2.5rem, 6vh, 4rem);
+  padding-top: clamp(1.75rem, 4vh, 2.5rem);
+  border-top: 1px solid var(--line);
+}
+.org h3 {
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  font-weight: 400;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ash);
+  margin-bottom: 1.25rem;
+}
+.org__facts {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+  gap: 1.1rem clamp(1.5rem, 3vw, 3rem);
+}
+.org__facts > div { display: grid; gap: 0.2rem; }
+.org__wide { grid-column: 1 / -1; }
+.org__facts dt {
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ash-dim);
+}
+.org__facts dd { margin: 0; font-size: var(--step--1); color: var(--ivory-dim); }
+
+/* --------------------------------------------------- dvojstĺpec a otázky */
+
+.cols {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: clamp(1.75rem, 4vh, 2.5rem) var(--gutter);
+  align-items: start;
+}
+.cols .h-section { grid-column: 1 / span 4; }
+.cols__body, .faq { grid-column: 6 / span 7; display: grid; gap: clamp(1rem, 2.5vh, 1.5rem); }
+@media (max-width: 900px) {
+  .cols .h-section, .cols__body, .faq { grid-column: 1 / -1; }
+}
+
+.faq { gap: 0; }
+.faq details {
+  border-top: 1px solid var(--line-soft);
+  padding-block: clamp(0.9rem, 2vh, 1.35rem);
+}
+.faq details:last-child { border-bottom: 1px solid var(--line-soft); }
+.faq summary {
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: var(--step-0);
+  font-weight: 600;
+  color: var(--ivory);
+}
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary::after {
+  content: "+";
+  font-family: var(--font-mono);
+  color: var(--amber);
+  flex: none;
+  transition: transform 0.3s var(--ease-out);
+}
+.faq details[open] summary::after { transform: rotate(45deg); }
+.faq details p {
+  margin-top: 0.7rem;
+  font-size: var(--step--1);
+  color: var(--ash);
+  max-width: 62ch;
+}
+
+/* Rozsah termínu v kalendári: bodka navyše pri dni otvorenom pre okolie. */
+.day--free.day--all::before {
+  content: "";
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--amber);
+}
+.cal__legend .k-all { color: var(--amber); border-radius: 50%; background: currentColor; }
 
 /* --------------------------------------------------------------- pravidlá */
 

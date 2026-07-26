@@ -75,6 +75,83 @@
           </div>
 
           <div class="panel">
+            <h2>Určenie termínu</h2>
+            <p class="form__note">
+              Počas úvodnej fázy majú prednosť Zálužania. Konkrétny deň sa dá otvoriť
+              aj pre okolité obce alebo nechať na individuálne schválenie.
+            </p>
+            <div class="form__row">
+              <div class="field">
+                <label for="srDate">Dátum</label>
+                <input type="date" id="srDate" />
+              </div>
+              <div class="field">
+                <label for="srScope">Pre koho</label>
+                <select id="srScope">
+                  <option value="zaluzie">Iba Veľké Zálužie</option>
+                  <option value="all">Aj okolité obce</option>
+                  <option value="approval">Po dohode</option>
+                </select>
+              </div>
+            </div>
+            <button class="act" type="button" id="srAdd">Nastaviť</button>
+            <ul class="blackouts" id="srList"></ul>
+          </div>
+
+          <div class="panel">
+            <h2>Blokované kontakty</h2>
+            <p class="form__note">
+              Telefón alebo e-mail, z ktorého sa žiadosť neprijme. Dôvod vidíš len ty.
+            </p>
+            <div class="field">
+              <label for="blValue">Telefón alebo e-mail</label>
+              <input type="text" id="blValue" placeholder="+421901234567" />
+            </div>
+            <div class="field">
+              <label for="blReason">Dôvod</label>
+              <input type="text" id="blReason" placeholder="nepovinné" />
+            </div>
+            <button class="act" type="button" id="blAdd">Zablokovať</button>
+            <ul class="blackouts" id="blList"></ul>
+          </div>
+
+          <div class="panel">
+            <h2>Občianske združenie</h2>
+            <p class="form__note">Tieto údaje idú do QR platby aj do sekcie s príspevkom.</p>
+            <div class="field">
+              <label for="ozName">Názov</label>
+              <input type="text" id="ozName" />
+            </div>
+            <div class="field">
+              <label for="ozIban">IBAN</label>
+              <input type="text" id="ozIban" />
+            </div>
+            <div class="field">
+              <label for="ozNote">Správa pre prijímateľa</label>
+              <input type="text" id="ozNote" />
+            </div>
+            <div class="form__row">
+              <div class="field">
+                <label for="ozIco">IČO</label>
+                <input type="text" id="ozIco" />
+              </div>
+              <div class="field">
+                <label for="ozBank">Banka</label>
+                <input type="text" id="ozBank" />
+              </div>
+            </div>
+            <div class="field">
+              <label for="ozAddress">Sídlo</label>
+              <input type="text" id="ozAddress" />
+            </div>
+            <div class="field">
+              <label for="ozRegistration">Registrácia</label>
+              <input type="text" id="ozRegistration" />
+            </div>
+            <button class="act" type="button" id="ozSave">Uložiť údaje združenia</button>
+          </div>
+
+          <div class="panel">
             <h2>Nastavenia</h2>
             <div class="form__row">
               <div class="field">
@@ -107,8 +184,16 @@
               </div>
             </div>
             <div class="field">
-              <label for="setMaxPeople">Maximálny počet osôb</label>
-              <input type="number" id="setMaxPeople" min="1" max="500" />
+              <label for="setScope">Predvolené určenie termínov</label>
+              <select id="setScope">
+                <option value="zaluzie">Iba Veľké Zálužie</option>
+                <option value="all">Aj okolité obce</option>
+                <option value="approval">Po dohode</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="setHome">Domáca obec</label>
+              <input type="text" id="setHome" />
             </div>
             <label class="check" style="font-size: var(--step--1)">
               <input type="checkbox" id="setPaused" />
@@ -123,6 +208,11 @@
               Žiadosť príde ako <b>čaká</b> a termín je hneď blokovaný, aby ho nedostal nikto
               druhý. Keď overíš adresu, dáš <b>potvrdiť</b>. Ak <b>zamietneš</b> alebo
               <b>zrušíš</b>, termín sa automaticky vráti späť do kalendára ako voľný.
+            </p>
+            <p class="form__note">
+              <b>Presunúť</b> preloží rezerváciu na náhradný termín pri zlom počasí —
+              pôvodný deň sa tým uvoľní. <b>Prevzatie</b> a <b>vrátenie</b> zapíšu
+              odovzdávací zoznam s časom a stavom vybavenia.
             </p>
           </div>
         </aside>
