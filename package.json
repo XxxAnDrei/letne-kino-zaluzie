@@ -6,7 +6,9 @@
   "type": "module",
   "scripts": {
     "start": "node server/index.js",
-    "dev": "node --watch server/index.js"
+    "dev": "node --watch server/index.js",
+    "prepare": "node scripts/prepare-static.mjs",
+    "build": "node scripts/prepare-static.mjs"
   },
   "engines": {
     "node": ">=20"
@@ -17,7 +19,7 @@
   },
   "license": "ISC",
   "dependencies": {
-    "better-sqlite3": "^13.0.1",
+    "@libsql/client": "^0.17.4",
     "bysquare": "^4.0.0",
     "express": "^5.2.1",
     "gsap": "^3.15.0",

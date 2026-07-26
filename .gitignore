@@ -8,3 +8,4 @@ data/
 .env.local
 .DS_Store
 npm-debug.log*
+public/vendor/

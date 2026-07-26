@@ -47,15 +47,15 @@ function sameMunicipality(a, b) {
   return norm(a) === norm(b);
 }
 
-export function validateReservation(body) {
-  const settings = getSettings();
+export async function validateReservation(body) {
+  const settings = await getSettings();
   const errors = {};
   const clean = {};
 
   if (text(body.web)) errors.web = 'Neplatná požiadavka.';
 
   const date = text(body.date);
-  const { status, scope } = dateStatus(date);
+  const { status, scope } = await dateStatus(date);
   if (status !== 'free') errors.date = STATUS_MESSAGES[status] || STATUS_MESSAGES.invalid;
   clean.date = date;
 
@@ -124,9 +124,10 @@ export function validateReservation(body) {
 
   // Žiadosť z blokovaného kontaktu sa neprijme, ale dôvod sa navonok nerozvádza.
   if (!errors.phone || !errors.email) {
-    const blocked = db
-      .prepare('SELECT value FROM blocklist WHERE value = ? OR value = ?')
-      .get(clean.phone, clean.email);
+    const blocked = await db.get('SELECT value FROM blocklist WHERE value = ? OR value = ?', [
+      clean.phone,
+      clean.email,
+    ]);
     if (blocked) {
       errors.phone = 'Z tohto kontaktu momentálne nie je možné poslať žiadosť. Ozvi sa mi prosím telefonicky.';
     }

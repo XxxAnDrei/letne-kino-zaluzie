@@ -97,17 +97,54 @@ v nastaveniach.
 
 | Premenná           | Načo je                                                        |
 | ------------------ | -------------------------------------------------------------- |
-| `ADMIN_PASSWORD`   | heslo do panela                                                  |
-| `SESSION_SECRET`   | podpisuje prihlasovaciu cookie; bez neho odhlásenie pri reštarte |
-| `PORT`             | port servera (predvolene 3000)                                   |
-| `NODE_ENV`         | `production` zapne `secure` cookie — vyžaduje HTTPS              |
-| `DATA_DIR`         | kam sa ukladá SQLite databáza                                    |
-| `TRUST_PROXY_HOPS` | počet proxy vrstiev pred aplikáciou (hosting zvyčajne 1)         |
+| `ADMIN_PASSWORD`      | heslo do panela                                                  |
+| `SESSION_SECRET`      | podpisuje prihlasovaciu cookie; bez neho odhlásenie pri reštarte |
+| `TURSO_DATABASE_URL`  | adresa Turso databázy; bez nej sa použije lokálny súbor          |
+| `TURSO_AUTH_TOKEN`    | token k Turso databáze                                            |
+| `PORT`                | port servera (predvolene 3000), na Verceli sa ignoruje           |
+| `NODE_ENV`            | `production` zapne `secure` cookie — vyžaduje HTTPS              |
+| `DATA_DIR`            | kam sa ukladá lokálna databáza                                    |
+| `TRUST_PROXY_HOPS`    | počet proxy vrstiev pred aplikáciou (hosting zvyčajne 1)         |
 
-## Nasadenie
+## Nasadenie na Vercel
 
-Aplikácia potrebuje **trvalý disk** — databáza je SQLite súbor. Serverless
-hostingy typu Vercel preto nesedia.
+Databáza je SQLite cez klienta **libSQL**. Lokálne ukazuje na súbor, v produkcii
+na hostované **Turso** — SQL je v oboch prípadoch identické, takže sa nikde
+neprepisujú dopyty.
+
+Bez Turso by to na Verceli nefungovalo: serverless funkcia má dočasný súborový
+systém, takže by sa rezervácie po každom nasadení stratili.
+
+1. **Turso**: vytvor databázu a token.
+
+   ```bash
+   turso db create letne-kino
+   turso db show letne-kino --url      # → TURSO_DATABASE_URL
+   turso db tokens create letne-kino   # → TURSO_AUTH_TOKEN
+   ```
+
+2. **Vercel**: naimportuj repozitár a nastav premenné prostredia —
+   `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`, `ADMIN_PASSWORD`, `SESSION_SECRET`
+   a `NODE_ENV=production`.
+
+3. Nasaď. Schéma sa vytvorí sama pri prvej požiadavke.
+
+Ako je to poskladané:
+
+- `public/` obsluhuje CDN, `api/index.js` je jediná serverless funkcia
+  a `vercel.json` presmeruje `/api/*` na ňu
+- `npm run build` skopíruje GSAP z `node_modules` do `public/vendor`
+- bezpečnostné hlavičky sú aj vo `vercel.json`, lebo statiku Express nevidí
+
+Ak by po prvom nasadení niektorá `/api/*` cesta vracala 404, pozri sa na
+`rewrites` vo `vercel.json` — to je jediné miesto, kde sa smerovanie rieši.
+
+**Zálohovanie:** `turso db shell letne-kino .dump > zaloha.sql`.
+
+## Nasadenie na vlastný server
+
+Rovnaký kód beží aj klasicky. Bez `TURSO_DATABASE_URL` použije lokálny súbor,
+takže stačí pripojiť trvalý disk na `/data`:
 
 ```bash
 docker build -t letne-kino .
@@ -119,13 +156,8 @@ docker run -d --name letne-kino \
   letne-kino
 ```
 
-Na Render/Railway/Fly stačí pripojiť disk na `/data` a nastaviť premenné.
-Pred aplikáciu daj HTTPS (reverzná proxy alebo hosting to rieši sám) — bez neho
-sa v produkcii neprenesie prihlasovacia cookie.
-
-**Zálohovanie:** stačí kopírovať `data/kino.sqlite`. Pri bežiacom serveri použi
-`sqlite3 data/kino.sqlite ".backup zaloha.sqlite"`, aby si nechytil rozpísanú
-transakciu.
+Pred aplikáciu daj HTTPS — bez neho sa v produkcii neprenesie prihlasovacia
+cookie. Zálohovanie je vtedy kopírovanie `data/kino.sqlite`.
 
 ## Čo si ešte doplň
 
@@ -141,9 +173,12 @@ transakciu.
 Bez build kroku — čo je v `public/`, to prehliadač dostane.
 
 ```
+api/
+  index.js        vstupný bod pre Vercel — exportuje tú istú aplikáciu
 server/
-  index.js        routy, bezpečnostné hlavičky, statické súbory
-  db.js           SQLite schéma a nastavenia
+  app.js          všetky routy a bezpečnostné hlavičky
+  index.js        lokálny beh: statické súbory a app.listen
+  db.js           libSQL klient, schéma a nastavenia
   availability.js jediný zdroj pravdy o tom, či je termín voľný
   validate.js     validácia žiadosti so slovenskými hláškami
   auth.js         prihlásenie správcu, obmedzenie počtu pokusov
@@ -164,6 +199,10 @@ sa dostať na jednotlivé skupiny (`#gScreen`, `#gKit`, `#gPeople` a ďalšie).
 
 Fonty sú self-hostované zámerne — stránka nikam neposiela IP adresy
 návštevníkov a funguje aj bez prístupu na cudzie CDN.
+
+Obmedzovanie počtu žiadostí je v databáze, nie v pamäti procesu. Na Verceli
+beží každá požiadavka potenciálne v inej inštancii, takže počítadlo v pamäti
+by nechránilo pred ničím.
 
 Animácie bežia na GSAP + ScrollTrigger a sú celé v `motion.js`. Rezervácia je od
 nich oddelená: keby sa GSAP nenačítal, kalendár aj formulár fungujú ďalej.

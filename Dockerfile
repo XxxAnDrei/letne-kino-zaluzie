@@ -6,17 +6,15 @@ ENV NODE_ENV=production \
 
 WORKDIR /app
 
-# better-sqlite3 sa inštaluje z predkompilovaných balíkov, ale ak by pre danú
-# platformu chýbali, potrebuje toolchain na preklad.
-RUN apt-get update \
- && apt-get install -y --no-install-recommends python3 make g++ ca-certificates \
- && rm -rf /var/lib/apt/lists/*
-
 COPY package.json package-lock.json* ./
 RUN npm ci --omit=dev || npm install --omit=dev
 
 COPY server ./server
+COPY scripts ./scripts
 COPY public ./public
+
+# GSAP sa skopíruje z node_modules do public/vendor.
+RUN node scripts/prepare-static.mjs
 
 # Databáza žije mimo image, aby prežila nové nasadenie.
 # Priečinok musí patriť používateľovi node, inak doň server nezapíše.

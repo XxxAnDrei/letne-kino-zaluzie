@@ -1,5 +1,7 @@
 import crypto from 'node:crypto';
 
+import { db } from './db.js';
+
 const COOKIE_NAME = 'vz_kino_admin';
 const SESSION_HOURS = 12;
 
@@ -105,44 +107,48 @@ export function requireAdmin(req, res, next) {
   next();
 }
 
-/**
- * Jednoduché počítadlo pokusov v pamäti. Na jednu obec bohato stačí
- * a nepotrebuje Redis.
+/*
+ * Počítadlo pokusov žije v databáze, nie v pamäti procesu. Na Verceli beží
+ * každá požiadavka potenciálne v inej inštancii, takže počítadlo v pamäti
+ * by nechránilo pred ničím.
  */
-function makeCounter(windowMs) {
-  const hits = new Map();
-  return {
-    countFor(key, now) {
-      const bucket = (hits.get(key) || []).filter((t) => now - t < windowMs);
-      if (bucket.length) hits.set(key, bucket);
-      else hits.delete(key);
-      return bucket;
-    },
-    record(key, now) {
-      const bucket = this.countFor(key, now);
-      bucket.push(now);
-      hits.set(key, bucket);
-      if (hits.size > 5000) {
-        for (const [k, v] of hits) if (v.every((t) => now - t >= windowMs)) hits.delete(k);
-      }
-    },
-  };
+async function countHits(bucket, key, windowMs, now) {
+  const since = now - windowMs;
+  // Upratovanie len pre tento kľúč — lacné a ohraničené.
+  await db.run('DELETE FROM rate_hits WHERE bucket = ? AND key = ? AND at < ?', [
+    bucket,
+    key,
+    since,
+  ]);
+  const row = await db.get(
+    'SELECT COUNT(*) AS n, MIN(at) AS oldest FROM rate_hits WHERE bucket = ? AND key = ? AND at >= ?',
+    [bucket, key, since]
+  );
+  return { count: row ? Number(row.n) : 0, oldest: row && row.oldest ? Number(row.oldest) : now };
+}
+
+async function recordHit(bucket, key, now) {
+  await db.run('INSERT INTO rate_hits (bucket, key, at) VALUES (?, ?, ?)', [bucket, key, now]);
+}
+
+function tooMany(res, message, windowMs, oldest, now) {
+  res.set('Retry-After', String(Math.max(1, Math.ceil((windowMs - (now - oldest)) / 1000))));
+  res.status(429).json({ error: message });
 }
 
 /** Middleware: zaráta každú požiadavku, ktorá cez neho prejde. */
-export function rateLimiter({ windowMs, max, message }) {
-  const counter = makeCounter(windowMs);
-  return (req, res, next) => {
-    const now = Date.now();
-    const key = req.ip || 'neznamy';
-    const bucket = counter.countFor(key, now);
-    if (bucket.length >= max) {
-      res.set('Retry-After', String(Math.ceil((windowMs - (now - bucket[0])) / 1000)));
-      res.status(429).json({ error: message });
-      return;
+export function rateLimiter({ bucket, windowMs, max, message }) {
+  return async (req, res, next) => {
+    try {
+      const now = Date.now();
+      const key = req.ip || 'neznamy';
+      const { count, oldest } = await countHits(bucket, key, windowMs, now);
+      if (count >= max) return tooMany(res, message, windowMs, oldest, now);
+      await recordHit(bucket, key, now);
+      next();
+    } catch (err) {
+      next(err);
     }
-    counter.record(key, now);
-    next();
   };
 }
 
@@ -151,21 +157,20 @@ export function rateLimiter({ windowMs, max, message }) {
  * rozpočet — inak by sa človek po pár preklepoch vo formulári zamkol
  * na hodinu, a za jednou obecnou IP adresou býva viac domácností.
  */
-export function successLimiter({ windowMs, max, message }) {
-  const counter = makeCounter(windowMs);
+export function successLimiter({ bucket, windowMs, max, message }) {
   return {
-    check(req, res) {
+    async check(req, res) {
       const now = Date.now();
-      const bucket = counter.countFor(req.ip || 'neznamy', now);
-      if (bucket.length >= max) {
-        res.set('Retry-After', String(Math.ceil((windowMs - (now - bucket[0])) / 1000)));
-        res.status(429).json({ error: message });
+      const key = req.ip || 'neznamy';
+      const { count, oldest } = await countHits(bucket, key, windowMs, now);
+      if (count >= max) {
+        tooMany(res, message, windowMs, oldest, now);
         return false;
       }
       return true;
     },
-    record(req) {
-      counter.record(req.ip || 'neznamy', Date.now());
+    async record(req) {
+      await recordHit(bucket, req.ip || 'neznamy', Date.now());
     },
   };
 }

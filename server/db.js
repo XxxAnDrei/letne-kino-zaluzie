@@ -1,20 +1,55 @@
-import Database from 'better-sqlite3';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createClient } from '@libsql/client';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const dataDir = process.env.DATA_DIR || path.join(__dirname, '..', 'data');
 
-fs.mkdirSync(dataDir, { recursive: true });
+/*
+ * Jeden klient pre lokálny beh aj pre Vercel. Lokálne ukazuje na súbor,
+ * v produkcii na Turso — SQL je v oboch prípadoch identické, takže sa
+ * netreba starať o rozdiely dialektov.
+ */
+function resolveUrl() {
+  if (process.env.TURSO_DATABASE_URL) return process.env.TURSO_DATABASE_URL;
+  const dataDir = process.env.DATA_DIR || path.join(__dirname, '..', 'data');
+  fs.mkdirSync(dataDir, { recursive: true });
+  return `file:${path.join(dataDir, 'kino.sqlite')}`;
+}
 
-export const db = new Database(path.join(dataDir, 'kino.sqlite'));
+const url = resolveUrl();
+export const isRemote = !url.startsWith('file:');
 
-db.pragma('journal_mode = WAL');
-db.pragma('foreign_keys = ON');
+const client = createClient({
+  url,
+  authToken: process.env.TURSO_AUTH_TOKEN,
+});
 
-db.exec(`
-  CREATE TABLE IF NOT EXISTS reservations (
+/* Tenká vrstva nad klientom, aby volania na mieste použitia zostali čitateľné. */
+export const db = {
+  async all(sql, args = []) {
+    return (await client.execute({ sql, args })).rows;
+  },
+  async get(sql, args = []) {
+    const { rows } = await client.execute({ sql, args });
+    return rows.length ? rows[0] : null;
+  },
+  async run(sql, args = []) {
+    const res = await client.execute({ sql, args });
+    return {
+      changes: res.rowsAffected,
+      lastInsertRowid: res.lastInsertRowid == null ? null : Number(res.lastInsertRowid),
+    };
+  },
+  transaction() {
+    return client.transaction('write');
+  },
+};
+
+/* ------------------------------------------------------------------ schéma */
+
+const SCHEMA = [
+  `CREATE TABLE IF NOT EXISTS reservations (
     id            INTEGER PRIMARY KEY AUTOINCREMENT,
     ref           TEXT    NOT NULL UNIQUE,
     date          TEXT    NOT NULL,
@@ -40,74 +75,49 @@ db.exec(`
     condition_note TEXT,
     created_at    TEXT    NOT NULL,
     updated_at    TEXT    NOT NULL
-  );
-
-  CREATE TABLE IF NOT EXISTS blackouts (
+  )`,
+  `CREATE TABLE IF NOT EXISTS blackouts (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     date        TEXT NOT NULL UNIQUE,
     reason      TEXT,
     created_at  TEXT NOT NULL
-  );
-
-  /* Kto smie o termín požiadať počas úvodnej fázy. */
-  CREATE TABLE IF NOT EXISTS slot_rules (
+  )`,
+  `CREATE TABLE IF NOT EXISTS slot_rules (
     date       TEXT PRIMARY KEY,
     scope      TEXT NOT NULL,
     created_at TEXT NOT NULL
-  );
-
-  /* Telefón alebo e-mail, ktorému sa žiadosť neprijme. */
-  CREATE TABLE IF NOT EXISTS blocklist (
+  )`,
+  `CREATE TABLE IF NOT EXISTS blocklist (
     id         INTEGER PRIMARY KEY AUTOINCREMENT,
     value      TEXT NOT NULL UNIQUE,
     reason     TEXT,
     created_at TEXT NOT NULL
-  );
-
-  CREATE TABLE IF NOT EXISTS settings (
+  )`,
+  `CREATE TABLE IF NOT EXISTS settings (
     key   TEXT PRIMARY KEY,
     value TEXT NOT NULL
-  );
-
-  CREATE INDEX IF NOT EXISTS idx_res_date   ON reservations(date);
-  CREATE INDEX IF NOT EXISTS idx_res_status ON reservations(status);
-`);
-
-/*
- * Jeden termín = jedna aktívna rezervácia. Čiastočný unikátny index rieši
- * súbeh dvoch prihlášok na ten istý deň na úrovni databázy, nie aplikácie —
- * druhý INSERT spadne na constraint namiesto toho, aby prešiel.
- */
-db.exec(`
-  CREATE UNIQUE INDEX IF NOT EXISTS idx_res_active_date
-    ON reservations(date)
-    WHERE status IN ('pending', 'approved');
-`);
-
-/* ---------------------------------------------------------------- migrácie */
-
-/*
- * Staršia schéma evidovala počet osôb a mala menej potvrdení. Nové stĺpce
- * sa dopĺňajú po jednom — ALTER TABLE ADD COLUMN je v SQLite lacný a bezpečný,
- * takže existujúce rezervácie zostanú zachované.
- */
-const columns = new Set(db.prepare('PRAGMA table_info(reservations)').all().map((c) => c.name));
-const addColumn = (name, ddl) => {
-  if (!columns.has(name)) db.exec(`ALTER TABLE reservations ADD COLUMN ${name} ${ddl}`);
-};
-addColumn('municipality', "TEXT NOT NULL DEFAULT 'Veľké Zálužie'");
-addColumn('moved_from', 'TEXT');
-addColumn('confirm_adult', 'INTEGER NOT NULL DEFAULT 0');
-addColumn('confirm_manual', 'INTEGER NOT NULL DEFAULT 0');
-addColumn('confirm_content', 'INTEGER NOT NULL DEFAULT 0');
-addColumn('confirm_privacy', 'INTEGER NOT NULL DEFAULT 0');
-addColumn('handout_at', 'TEXT');
-addColumn('handout_items', 'TEXT');
-addColumn('return_at', 'TEXT');
-addColumn('return_items', 'TEXT');
-addColumn('condition_note', 'TEXT');
-
-/* ---------------------------------------------------------------- nastavenia */
+  )`,
+  /*
+   * Obmedzovanie počtu žiadostí musí byť v databáze, nie v pamäti procesu.
+   * Na Verceli beží každá požiadavka potenciálne v inej inštancii, takže
+   * počítadlo v pamäti by nechránilo nič.
+   */
+  `CREATE TABLE IF NOT EXISTS rate_hits (
+    id     INTEGER PRIMARY KEY AUTOINCREMENT,
+    bucket TEXT NOT NULL,
+    key    TEXT NOT NULL,
+    at     INTEGER NOT NULL
+  )`,
+  `CREATE INDEX IF NOT EXISTS idx_res_date   ON reservations(date)`,
+  `CREATE INDEX IF NOT EXISTS idx_res_status ON reservations(status)`,
+  `CREATE INDEX IF NOT EXISTS idx_rate       ON rate_hits(bucket, key, at)`,
+  /*
+   * Jeden termín = jedna aktívna rezervácia. Čiastočný unikátny index rieši
+   * súbeh dvoch prihlášok na ten istý deň na úrovni databázy, nie aplikácie.
+   */
+  `CREATE UNIQUE INDEX IF NOT EXISTS idx_res_active_date
+     ON reservations(date) WHERE status IN ('pending', 'approved')`,
+];
 
 const DEFAULT_SETTINGS = {
   season_start: '05-01',
@@ -134,16 +144,36 @@ const DEFAULT_SETTINGS = {
   pay_note: 'Dobrovolny prispevok - komunitne projekty',
 };
 
-const insertSetting = db.prepare(
-  'INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO NOTHING'
-);
-for (const [key, value] of Object.entries(DEFAULT_SETTINGS)) insertSetting.run(key, value);
-
 export const SETTING_KEYS = Object.keys(DEFAULT_SETTINGS);
 export const SCOPES = ['zaluzie', 'all', 'approval'];
 
-export function getSettings() {
-  const rows = db.prepare('SELECT key, value FROM settings').all();
+/*
+ * Serverless funkcia sa môže prebudiť kedykoľvek, takže sa príprava schémy
+ * púšťa raz za život inštancie a ostatné požiadavky počkajú na ten istý sľub.
+ */
+let ready = null;
+export function init() {
+  if (!ready) {
+    ready = (async () => {
+      for (const sql of SCHEMA) await client.execute(sql);
+      for (const [key, value] of Object.entries(DEFAULT_SETTINGS)) {
+        await client.execute({
+          sql: 'INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO NOTHING',
+          args: [key, value],
+        });
+      }
+    })().catch((err) => {
+      ready = null; // nech to ďalšia požiadavka skúsi znova
+      throw err;
+    });
+  }
+  return ready;
+}
+
+/* --------------------------------------------------------------- nastavenia */
+
+export async function getSettings() {
+  const rows = await db.all('SELECT key, value FROM settings');
   const out = { ...DEFAULT_SETTINGS };
   for (const row of rows) out[row.key] = row.value;
   return {
@@ -169,14 +199,13 @@ export function getSettings() {
   };
 }
 
-const upsertSetting = db.prepare(
-  'INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value'
-);
-
-export function setSettings(patch) {
-  const write = db.transaction((entries) => {
-    for (const [key, value] of entries) upsertSetting.run(key, String(value));
-  });
-  write(Object.entries(patch).filter(([key]) => SETTING_KEYS.includes(key)));
+export async function setSettings(patch) {
+  const entries = Object.entries(patch).filter(([key]) => SETTING_KEYS.includes(key));
+  for (const [key, value] of entries) {
+    await db.run(
+      'INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value',
+      [key, String(value)]
+    );
+  }
   return getSettings();
 }

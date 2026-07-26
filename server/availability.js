@@ -16,29 +16,30 @@ export const ACTIVE_STATUSES = ['pending', 'approved'];
  * Voľný termín nesie navyše `scope`, teda pre koho je počas úvodnej fázy
  * otvorený: 'zaluzie' | 'all' | 'approval'.
  */
-export function buildAvailability(from, to) {
-  const settings = getSettings();
+export async function buildAvailability(from, to) {
+  const settings = await getSettings();
   const now = today();
   const firstOpen = addDays(now, settings.leadDays);
   const lastOpen = addDays(now, settings.horizonDays);
 
-  const takenRows = db
-    .prepare(
-      `SELECT date FROM reservations
-        WHERE status IN (${ACTIVE_STATUSES.map(() => '?').join(',')})
-          AND date BETWEEN ? AND ?`
-    )
-    .all(...ACTIVE_STATUSES, from, to);
+  const takenRows = await db.all(
+    `SELECT date FROM reservations
+      WHERE status IN (${ACTIVE_STATUSES.map(() => '?').join(',')})
+        AND date BETWEEN ? AND ?`,
+    [...ACTIVE_STATUSES, from, to]
+  );
   const taken = new Set(takenRows.map((r) => r.date));
 
-  const blockedRows = db
-    .prepare('SELECT date, reason FROM blackouts WHERE date BETWEEN ? AND ?')
-    .all(from, to);
+  const blockedRows = await db.all(
+    'SELECT date, reason FROM blackouts WHERE date BETWEEN ? AND ?',
+    [from, to]
+  );
   const blocked = new Map(blockedRows.map((r) => [r.date, r.reason]));
 
-  const ruleRows = db
-    .prepare('SELECT date, scope FROM slot_rules WHERE date BETWEEN ? AND ?')
-    .all(from, to);
+  const ruleRows = await db.all(
+    'SELECT date, scope FROM slot_rules WHERE date BETWEEN ? AND ?',
+    [from, to]
+  );
   const rules = new Map(ruleRows.map((r) => [r.date, r.scope]));
 
   const days = [];
@@ -74,8 +75,8 @@ export function scopeFor(date, rules, settings) {
 }
 
 /** Jediný zdroj pravdy pre „dá sa tento termín rezervovať". Používa ho aj POST. */
-export function dateStatus(date) {
+export async function dateStatus(date) {
   if (!isIsoDate(date)) return { status: 'invalid', scope: null };
-  const { days } = buildAvailability(date, date);
+  const { days } = await buildAvailability(date, date);
   return { status: days[0].status, scope: days[0].scope };
 }
