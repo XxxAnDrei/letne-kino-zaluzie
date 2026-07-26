@@ -94,10 +94,12 @@ transakciu.
 
 ## Čo si ešte doplň
 
-- **Telefón a meno v pätičke** — `public/index.html`, hľadaj `TODO`.
 - **Sezónu a časy** — priamo v paneli, netreba zasahovať do kódu.
-- Fotky a video sú v `public/media/`. Ak ich vymeníš, zachovaj názvy alebo
-  uprav odkazy v `index.html`.
+- **Rozmery plátna vo výkrese** — `≈ 5,2 × 3,4 m` v `index.html` je odvodené
+  z uhlopriečky 200 palcov. Ak máš údaje svojho kusu, prepíš ich; sú na
+  jednom mieste v SVG so `class="draw--scale"`.
+- V `public/media/` je len video a poster do hero. Ak ich vymeníš, zachovaj
+  názvy alebo uprav `data-desktop` a `data-mobile` na prvku videa.
 
 ## Ako je to postavené
 
@@ -116,8 +118,13 @@ public/
   spravca.html    panel
   assets/js/      motion.js (GSAP), booking.js (kalendár), admin.js
   assets/fonts/   Instrument Sans + Serif, lokálne (nič sa neťahá z Googlu)
-  media/          video a fotky
+  media/          video a poster do hero
 ```
+
+Grafika mimo hero nie sú fotky, ale kreslené SVG priamo v `index.html` —
+mierkový výkres plátna v sekcii „O čo tu ide" a elevácia záhrady v scéne
+večera. Sú inline preto, že ich animuje GSAP podľa pozície scrollu a potrebuje
+sa dostať na jednotlivé skupiny (`#gScreen`, `#gKit`, `#gPeople` a ďalšie).
 
 Fonty sú self-hostované zámerne — stránka nikam neposiela IP adresy
 návštevníkov a funguje aj bez prístupu na cudzie CDN.
