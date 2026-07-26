@@ -1,0 +1,365 @@
+/* Správcovský panel. Preberá tokeny a primitíva z hlavnej stránky —
+   admin používa jeden človek, takže pár nepoužitých pravidiel navyše
+   je lacnejšie než rozbíjať CSS do troch súborov. */
+@import url("./site.css");
+
+body.admin {
+  background: var(--night-950);
+  min-height: 100svh;
+}
+
+.admin__bar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: color-mix(in oklab, var(--night-950) 88%, transparent);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--line);
+  padding-block: 1rem;
+}
+.admin__bar-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.admin__tools {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.admin__main {
+  padding-block: clamp(1.75rem, 4vh, 3rem) 5rem;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: clamp(1.5rem, 3vw, 2.5rem);
+  align-items: start;
+}
+@media (max-width: 1040px) {
+  .admin__main {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ------------------------------------------------------------- prihlásenie */
+
+.login {
+  min-height: 100svh;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  padding: var(--gutter);
+}
+.login form {
+  width: min(100%, 340px);
+  display: grid;
+  gap: 1rem;
+  border: 1px solid var(--line);
+  background: var(--night-900);
+  padding: clamp(1.5rem, 4vw, 2.25rem);
+}
+.login h1 {
+  font-size: var(--step-2);
+}
+
+/* ------------------------------------------------------------------ filtre */
+
+.filters {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+}
+.filters button {
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ash);
+  padding: 0.42rem 0.85rem;
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: color 0.25s ease, border-color 0.25s ease, background 0.25s ease;
+}
+.filters button:hover {
+  color: var(--ivory);
+  border-color: var(--ash-dim);
+}
+.filters button[aria-pressed="true"] {
+  color: var(--night-950);
+  background: var(--ivory);
+  border-color: var(--ivory);
+}
+.filters button b {
+  font-weight: 400;
+  opacity: 0.65;
+  margin-left: 0.35rem;
+}
+
+.search {
+  flex: 1;
+  min-width: 180px;
+  padding: 0.5rem 0.8rem;
+  background: color-mix(in oklab, var(--night-900) 80%, transparent);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  font-size: var(--step--1);
+}
+.search:focus {
+  outline: none;
+  border-color: var(--amber);
+}
+
+/* ------------------------------------------------------------- rezervácie */
+
+.res {
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--night-900);
+  margin-bottom: 0.75rem;
+  overflow: hidden;
+}
+.res__top {
+  display: grid;
+  grid-template-columns: 116px minmax(0, 1fr) auto;
+  gap: 1rem;
+  padding: 1rem 1.15rem;
+  align-items: start;
+}
+@media (max-width: 720px) {
+  .res__top {
+    grid-template-columns: 1fr;
+  }
+}
+.res__when {
+  display: grid;
+  gap: 0.2rem;
+}
+.res__day {
+  font-family: var(--font-display);
+  font-size: var(--step-2);
+  line-height: 1;
+  color: var(--ivory);
+}
+.res__who {
+  display: grid;
+  gap: 0.3rem;
+  min-width: 0;
+}
+.res__name {
+  font-weight: 600;
+  color: var(--ivory);
+}
+.res__facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  font-size: var(--step--1);
+  color: var(--ash);
+}
+.res__facts a {
+  color: var(--ivory-dim);
+  text-decoration: none;
+  border-bottom: 1px solid var(--line);
+}
+.res__flags {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin-top: 0.15rem;
+}
+.flag {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  padding: 0.1rem 0.4rem;
+  color: var(--ash-dim);
+}
+.flag.on {
+  color: var(--grass);
+  border-color: color-mix(in oklab, var(--grass) 45%, transparent);
+}
+.flag.off {
+  color: color-mix(in oklab, var(--ember) 70%, var(--ivory));
+  border-color: color-mix(in oklab, var(--ember) 45%, transparent);
+}
+
+.chip {
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  padding: 0.25rem 0.65rem;
+  white-space: nowrap;
+}
+.chip--pending { color: var(--amber); }
+.chip--approved { color: var(--grass); }
+.chip--rejected { color: color-mix(in oklab, var(--ember) 75%, var(--ivory)); }
+.chip--cancelled { color: var(--ash-dim); }
+.chip--done { color: var(--dusk-600); }
+
+.res__note {
+  padding: 0 1.15rem 1rem;
+  font-size: var(--step--1);
+  color: var(--ash);
+}
+.res__note b {
+  color: var(--ivory-dim);
+  font-weight: 600;
+}
+.res__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  padding: 0.85rem 1.15rem;
+  border-top: 1px solid var(--line-soft);
+  background: color-mix(in oklab, var(--night-850) 55%, transparent);
+  align-items: center;
+}
+.act {
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ivory-dim);
+  padding: 0.4rem 0.8rem;
+  border-radius: 3px;
+  font-size: var(--step--1);
+  cursor: pointer;
+  transition: border-color 0.25s ease, color 0.25s ease, background 0.25s ease;
+}
+.act:hover:not(:disabled) {
+  border-color: var(--amber);
+  color: var(--amber);
+}
+.act--ok:hover:not(:disabled) {
+  border-color: var(--grass);
+  color: var(--grass);
+}
+.act--no:hover:not(:disabled) {
+  border-color: var(--ember);
+  color: var(--ember);
+}
+.act:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.act--note {
+  flex: 1;
+  min-width: 160px;
+  padding: 0.4rem 0.7rem;
+  background: color-mix(in oklab, var(--night-950) 50%, transparent);
+  font-size: var(--step--1);
+}
+
+/* ------------------------------------------------------------------ panely */
+
+.panel {
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--night-900);
+  padding: 1.15rem;
+  margin-bottom: 1rem;
+  display: grid;
+  gap: 0.85rem;
+}
+.panel h2 {
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  font-weight: 400;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ash);
+}
+.panel .field > label {
+  font-size: 0.64rem;
+}
+.panel input,
+.panel select {
+  padding: 0.5rem 0.65rem !important;
+  font-size: var(--step--1) !important;
+}
+.panel .form__row {
+  gap: 0.6rem;
+}
+
+.blackouts {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.35rem;
+  max-height: 220px;
+  overflow-y: auto;
+}
+.blackouts li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: var(--step--1);
+  padding: 0.4rem 0.55rem;
+  border: 1px solid var(--line-soft);
+  border-radius: 3px;
+}
+.blackouts time {
+  font-family: var(--font-mono);
+  color: var(--ivory);
+}
+.blackouts span {
+  color: var(--ash-dim);
+  font-size: 0.82em;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.blackouts button {
+  border: 0;
+  background: none;
+  color: var(--ash-dim);
+  cursor: pointer;
+  padding: 0 0.2rem;
+  font-size: 1.1rem;
+  line-height: 1;
+}
+.blackouts button:hover {
+  color: var(--ember);
+}
+
+.empty {
+  border: 1px dashed var(--line);
+  border-radius: 4px;
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  color: var(--ash-dim);
+  font-size: var(--step--1);
+}
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 1.75rem;
+  transform: translateX(-50%) translateY(120%);
+  z-index: 60;
+  background: var(--ivory);
+  color: var(--night-950);
+  padding: 0.7rem 1.25rem;
+  border-radius: 999px;
+  font-size: var(--step--1);
+  font-weight: 600;
+  box-shadow: 0 18px 40px -18px rgb(0 0 0 / 0.7);
+  pointer-events: none;
+}
+.toast.is-bad {
+  background: var(--ember);
+}

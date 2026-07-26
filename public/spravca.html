@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="sk">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Správa rezervácií — Letné kino</title>
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="stylesheet" href="/assets/css/admin.css" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  </head>
+  <body class="admin">
+    <div class="grain" aria-hidden="true"></div>
+
+    <!-- ============================================ PRIHLÁSENIE -->
+    <section class="login" id="login" hidden>
+      <form id="loginForm">
+        <svg width="34" height="22" viewBox="0 0 34 22" aria-hidden="true">
+          <path d="M1.6 20.8 L4.7 2.4 L17 7.7 L29.3 2.4 L32.4 20.8 Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" />
+          <rect x="6.8" y="9.6" width="20.4" height="8.2" fill="var(--amber)" />
+        </svg>
+        <h1>Správa rezervácií</h1>
+        <div class="field">
+          <label for="password">Heslo</label>
+          <input type="password" id="password" autocomplete="current-password" required />
+        </div>
+        <p class="form__error" id="loginError" hidden role="alert"></p>
+        <button class="btn" type="submit" id="loginBtn">Prihlásiť sa</button>
+      </form>
+    </section>
+
+    <!-- ============================================ PANEL -->
+    <div id="panel" hidden>
+      <header class="admin__bar">
+        <div class="wrap admin__bar-inner">
+          <div>
+            <p class="meta">Letné kino — Veľké Zálužie</p>
+            <strong style="font-family: var(--font-display); font-size: var(--step-1)">
+              Správa rezervácií
+            </strong>
+          </div>
+          <div class="admin__tools">
+            <input class="search" type="search" id="search" placeholder="Hľadať meno, telefón, adresu…" />
+            <a class="act" href="/api/admin/export.csv">Export CSV</a>
+            <a class="act" href="/" target="_blank" rel="noopener">Stránka ↗</a>
+            <button class="act" type="button" id="logout">Odhlásiť</button>
+          </div>
+        </div>
+      </header>
+
+      <main class="wrap admin__main">
+        <section>
+          <div class="filters" id="filters" role="group" aria-label="Filter podľa stavu"></div>
+          <div id="list"></div>
+        </section>
+
+        <aside>
+          <div class="panel">
+            <h2>Zablokovať termín</h2>
+            <p class="form__note">
+              Deň, kedy techniku nepožičiavaš — dovolenka, servis, vlastná akcia. V kalendári
+              sa zobrazí ako nedostupný.
+            </p>
+            <div class="form__row">
+              <div class="field">
+                <label for="boDate">Dátum</label>
+                <input type="date" id="boDate" />
+              </div>
+              <div class="field">
+                <label for="boReason">Dôvod</label>
+                <input type="text" id="boReason" placeholder="nepovinné" />
+              </div>
+            </div>
+            <button class="act" type="button" id="boAdd">Zablokovať</button>
+            <ul class="blackouts" id="boList"></ul>
+          </div>
+
+          <div class="panel">
+            <h2>Nastavenia</h2>
+            <div class="form__row">
+              <div class="field">
+                <label for="setSeasonStart">Sezóna od (MM-DD)</label>
+                <input type="text" id="setSeasonStart" placeholder="05-01" />
+              </div>
+              <div class="field">
+                <label for="setSeasonEnd">Sezóna do (MM-DD)</label>
+                <input type="text" id="setSeasonEnd" placeholder="09-30" />
+              </div>
+            </div>
+            <div class="form__row">
+              <div class="field">
+                <label for="setPickup">Prevzatie</label>
+                <input type="text" id="setPickup" placeholder="17:00" />
+              </div>
+              <div class="field">
+                <label for="setReturn">Vrátenie</label>
+                <input type="text" id="setReturn" placeholder="10:00" />
+              </div>
+            </div>
+            <div class="form__row">
+              <div class="field">
+                <label for="setLead">Lehota vopred (dni)</label>
+                <input type="number" id="setLead" min="0" max="60" />
+              </div>
+              <div class="field">
+                <label for="setHorizon">Horizont (dni)</label>
+                <input type="number" id="setHorizon" min="7" max="400" />
+              </div>
+            </div>
+            <div class="field">
+              <label for="setMaxPeople">Maximálny počet osôb</label>
+              <input type="number" id="setMaxPeople" min="1" max="500" />
+            </div>
+            <label class="check" style="font-size: var(--step--1)">
+              <input type="checkbox" id="setPaused" />
+              <span>Pozastaviť príjem žiadostí<small>Kalendár zostane viditeľný, ale nedá sa nič vybrať.</small></span>
+            </label>
+            <button class="act" type="button" id="setSave">Uložiť nastavenia</button>
+          </div>
+
+          <div class="panel">
+            <h2>Ako to funguje</h2>
+            <p class="form__note">
+              Žiadosť príde ako <b>čaká</b> a termín je hneď blokovaný, aby ho nedostal nikto
+              druhý. Keď overíš adresu, dáš <b>potvrdiť</b>. Ak <b>zamietneš</b> alebo
+              <b>zrušíš</b>, termín sa automaticky vráti späť do kalendára ako voľný.
+            </p>
+          </div>
+        </aside>
+      </main>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+    <script src="/vendor/gsap/gsap.min.js"></script>
+    <script src="/assets/js/admin.js"></script>
+  </body>
+</html>
