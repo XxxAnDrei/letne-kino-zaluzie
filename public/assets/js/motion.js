@@ -19,14 +19,17 @@
 
   function revealAll() {
     $$(".reveal").forEach(function (n) { n.style.opacity = "1"; });
-    $$(".dusk__beat").forEach(function (n) { n.style.opacity = "1"; });
     $$(".step").forEach(function (n) { n.classList.add("is-on"); });
     var spine = $("setupSpine");
     if (spine) spine.style.transform = "scaleY(1)";
-    var stars = $("duskStars");
-    if (stars) stars.style.opacity = "1";
-    var night = $("duskNight");
-    if (night) night.style.opacity = "1";
+
+    // Bez animácie sa momenty večera nestriedajú — ukážu sa všetky naraz
+    // a scéna prestane byť pripnutá, takže sa dá normálne preskrolovať.
+    var dusk = document.querySelector(".dusk");
+    if (dusk) dusk.classList.add("is-static");
+    $$(".beat").forEach(function (n) { n.classList.add("is-on"); });
+    var fill = $("duskFill");
+    if (fill) fill.style.setProperty("--p", "1");
   }
 
   function dropLeader() {
@@ -208,10 +211,10 @@
   }
 
   // Fotka v príbehu sa pri skrolovaní pomaly odzoomováva.
-  gsap.to(".story__photo img", {
+  gsap.to(".story__proof img", {
     scale: 1,
     ease: "none",
-    scrollTrigger: { trigger: ".story__photo", start: "top bottom", end: "bottom top", scrub: true },
+    scrollTrigger: { trigger: ".story__proof", start: "top bottom", end: "bottom top", scrub: true },
   });
 
   gsap.utils.toArray(".eyebrow").forEach(function (row) {
@@ -232,47 +235,78 @@
   (function duskScene() {
     var section = document.querySelector(".dusk");
     if (!section) return;
-    var beats = $$(".dusk__beat");
-    var bars = $$("#duskProgress i");
 
-    gsap.set("#duskScreen", { scale: 0.4, yPercent: 6, transformOrigin: "center center" });
-    gsap.set(beats, { autoAlpha: 0, y: 22 });
+    var beats = $$(".beat", section);
+    var video = $("duskVideo");
+    var fill = $("duskFill");
 
-    var tl = gsap.timeline({
-      scrollTrigger: {
-        trigger: section,
-        start: "top top",
-        end: "+=280%",
-        pin: true,
-        scrub: 0.6,
-        anticipatePin: 1,
+    // Hranice momentov. Prvý beží od začiatku, takže scéna nie je nikdy bez textu.
+    var marks = [0, 0.42, 0.72];
+
+    /* Video má 2,6 MB, tak sa načíta až keď sa sekcia blíži. Do vtedy je
+       v ráme statický záber, takže plátno nikdy nesvieti naprázdno. */
+    var seekable = false;
+    ScrollTrigger.create({
+      trigger: section,
+      start: "top bottom+=60%",
+      once: true,
+      onEnter: function () {
+        if (!video || !video.dataset.src) return;
+        video.addEventListener(
+          "loadeddata",
+          function () {
+            if (!isFinite(video.duration) || video.duration <= 0) return;
+            seekable = true;
+            video.classList.add("is-ready");
+          },
+          { once: true }
+        );
+        // Keď kodek chýba alebo sa načítanie nepodarí, zostane statický záber.
+        video.addEventListener("error", function () { seekable = false; }, { once: true });
+        video.src = video.dataset.src;
+        video.load();
       },
     });
 
-    tl.to("#duskScreen", { scale: 1, yPercent: 0, duration: 0.18, ease: "power2.out" }, 0)
-      .to("#duskNight", { opacity: 1, duration: 0.4, ease: "none" }, 0.08)
-      .to("#duskStars", { opacity: 1, duration: 0.35, ease: "none" }, 0.14);
+    ScrollTrigger.create({
+      trigger: section,
+      start: "top top",
+      end: "+=300%",
+      pin: true,
+      scrub: 0.6,
+      anticipatePin: 1,
+      onUpdate: function (self) {
+        var p = self.progress;
 
-    // Tri momenty večera: prevzatie → premietanie → vrátenie.
-    // Odchod jedného sa prekrýva s príchodom ďalšieho, inak by medzi nimi
-    // vzniklo prázdne plátno bez textu.
-    var inAt = [0.16, 0.44, 0.7];
-    var outAt = [0.4, 0.66, null];
+        // Scroll pretáča záber. Celý dej scény — padá noc — je v ňom naozaj,
+        // takže sa nemusí dokresľovať.
+        if (seekable) {
+          var t = gsap.utils.clamp(0, video.duration - 0.05, p * video.duration);
+          if (Math.abs(video.currentTime - t) > 1 / 30) video.currentTime = t;
+        }
 
-    beats.forEach(function (beat, i) {
-      tl.to(beat, { autoAlpha: 1, y: 0, duration: 0.07, ease: "power2.out" }, inAt[i]);
-      if (outAt[i] !== null) {
-        tl.to(beat, { autoAlpha: 0, y: -18, duration: 0.06, ease: "power2.in" }, outAt[i]);
+        if (fill) fill.style.setProperty("--p", String(p));
+
+        var active = 0;
+        for (var i = marks.length - 1; i >= 0; i -= 1) {
+          if (p >= marks[i]) { active = i; break; }
+        }
+        beats.forEach(function (beat, i) {
+          beat.classList.toggle("is-on", i === active);
+        });
+      },
+    });
+
+    // Záber sa cez celú scénu nenápadne priblíži — jediný pohyb navyše.
+    gsap.fromTo(
+      ".dusk__media",
+      { scale: 1.08 },
+      {
+        scale: 1,
+        ease: "none",
+        scrollTrigger: { trigger: section, start: "top top", end: "+=300%", scrub: 0.6 },
       }
-    });
-
-    // Ukazovateľ postupu: každý prúžok sa plní počas svojho momentu.
-    bars.forEach(function (bar, i) {
-      var from = inAt[i];
-      var to = i === bars.length - 1 ? 1 : inAt[i + 1];
-      gsap.set(bar, { "--p": 0 });
-      tl.to(bar, { "--p": 1, duration: to - from, ease: "none" }, from);
-    });
+    );
   })();
 
   /* ================================================== 6. CIEVKA OBSAHU */

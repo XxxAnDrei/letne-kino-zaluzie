@@ -139,84 +139,123 @@
         <div class="wrap">
           <p class="eyebrow"><b>01</b> O čo tu ide</p>
           <div class="story">
-            <div class="story__text">
-              <h2 class="h-section reveal">
-                Moje vybavenie, <i>váš</i> večer
-              </h2>
-              <p class="lede reveal">
-                Plátno, projektor a reproduktor sú moje súkromné veci. Kúpil som ich na
-                komunitné premietanie v obci a odvtedy väčšinu roka len ležia v pivnici.
-              </p>
-              <p class="reveal">
-                Tak som si povedal, že ich požičiam ďalej. Bezplatne, rodinám vo Veľkom Záluží,
-                vždy na jeden večer. Nič sa neplatí, nedáva sa žiadna záloha a nie je za tým
-                žiadny háčik. Zoberieš si to popoludní, večer si na záhrade pustíte film a
-                na druhý deň ráno mi to vrátiš.
-              </p>
-              <p class="reveal">
-                Termíny idú podľa poradia. Každý tu vidí ten istý kalendár a vyberá si z toho
-                istého, čo je voľné — bez žrebovania a bez toho, aby o tom niekto rozhodoval.
-              </p>
-            </div>
+            <h2 class="h-section story__claim reveal">
+              Moje vybavenie, <i>váš</i> večer
+            </h2>
 
-            <figure class="story__photo reveal">
+            <!-- Fotka je dôkaz, nie ozdoba: v kinovom formáte a cez celú šírku,
+                 aby bolo plátno naozaj vidieť aj s brandingom obce. -->
+            <figure class="story__proof reveal">
               <img
-                src="/media/stills/sumrak.jpg"
-                alt="Nafukovacie plátno postavené v záhrade rodinného domu na súmraku"
-                width="1400"
-                height="788"
+                src="/media/stills/platno-vecer.jpg"
+                alt="Nafukovacie plátno s nápisom Veľké Zálužie postavené v záhrade rodinného domu, rodina sedí na dekách pred ním"
+                width="1800"
+                height="752"
                 loading="lazy"
                 decoding="async"
               />
-              <figcaption class="meta">Záhrada vo Veľkom Záluží, tesne pred zotmením</figcaption>
+              <figcaption class="meta">
+                Záhrada vo Veľkom Záluží, krátko pred zotmením
+              </figcaption>
             </figure>
 
-            <blockquote class="story__quote reveal">
-              <p>
-                „Radšej nech to slúži dvadsiatim rodinám za leto, než aby to stálo zabalené
-                v pivnici.”
-              </p>
-              <p class="meta">Prečo je to zadarmo</p>
-            </blockquote>
+            <div class="story__body">
+              <div class="story__col">
+                <p class="lede reveal">
+                  Plátno, projektor a reproduktor sú moje súkromné veci. Kúpil som ich na
+                  komunitné premietanie v obci a odvtedy väčšinu roka len ležia v pivnici.
+                </p>
+                <p class="reveal">
+                  Tak som si povedal, že ich požičiam ďalej. Bezplatne, rodinám vo Veľkom
+                  Záluží, vždy na jeden večer. Nič sa neplatí, nedáva sa žiadna záloha a nie
+                  je za tým žiadny háčik. Zoberieš si to popoludní, večer si na záhrade
+                  pustíte film a na druhý deň ráno mi to vrátiš.
+                </p>
+              </div>
+              <div class="story__col">
+                <p class="reveal">
+                  Termíny idú podľa poradia. Každý tu vidí ten istý kalendár a vyberá si
+                  z toho istého, čo je voľné. Bez žrebovania a bez toho, aby o tom niekto
+                  rozhodoval.
+                </p>
+                <blockquote class="story__signoff reveal">
+                  <p>
+                    „Radšej nech to slúži dvadsiatim rodinám za leto, než aby to stálo
+                    zabalené v pivnici.”
+                  </p>
+                </blockquote>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
       <!-- ================================================== VEČER -->
-      <section class="dusk" id="vecer" aria-label="Ako prebieha večer">
-        <div class="dusk__sky" aria-hidden="true"></div>
-        <div class="dusk__night" id="duskNight" aria-hidden="true"></div>
-        <div class="dusk__stars" id="duskStars" aria-hidden="true"></div>
-
-        <div class="dusk__screen" id="duskScreen">
-          <article class="dusk__beat" data-beat="0">
-            <time datetime="17:00">17:00 — Piatok</time>
-            <h3>Prevezmeš techniku</h3>
-            <p>
-              Príde si po jeden kufor a zrolované plátno. Za desať minút ti ukážem, čo kam
-              patrí, a odchádzaš.
-            </p>
-          </article>
-          <article class="dusk__beat" data-beat="1">
-            <time datetime="21:00">21:00 — Zotmilo sa</time>
-            <h3>Obraz má 200 palcov</h3>
-            <p>
-              Premietať sa dá až keď je tma. Zvuk z reproduktora pokryje bežnú záhradu,
-              hlasitosť si riadiš sám.
-            </p>
-          </article>
-          <article class="dusk__beat" data-beat="2">
-            <time datetime="10:00">10:00 — Sobota</time>
-            <h3>Vrátiš to ráno</h3>
-            <p>
-              Zložené, suché a v tom istom kufri. Ak v noci padla rosa, stačí plátno nechať
-              dopoludnia rozložené a doniesť neskôr.
-            </p>
-          </article>
+      <!-- Scéna ukazuje sama seba: v ráme skutočného nafukovacieho plátna beží
+           tvoje video a scroll ho pretáča zo súmraku do noci. -->
+      <section class="dusk" id="vecer" aria-labelledby="duskTitle">
+        <!-- Skutočný záber, ktorý scroll pretáča. Obloha v ňom tmavne sama,
+             takže tu nie je žiadna nakreslená atmosféra navyše. -->
+        <div class="dusk__media" aria-hidden="true">
+          <img
+            class="dusk__still"
+            src="/media/stills/platno-ram.jpg"
+            alt=""
+            width="1200"
+            height="675"
+            loading="lazy"
+            decoding="async"
+          />
+          <video
+            id="duskVideo"
+            class="dusk__video"
+            muted
+            playsinline
+            preload="none"
+            data-src="/media/kino-scrub.mp4"
+          ></video>
         </div>
+        <div class="dusk__scrim" aria-hidden="true"></div>
 
-        <div class="dusk__progress" id="duskProgress" aria-hidden="true">
-          <i></i><i></i><i></i>
+        <h2 id="duskTitle" class="sr-only">Ako prebieha večer</h2>
+
+        <div class="wrap dusk__inner">
+          <ol class="dusk__beats" id="duskBeats">
+            <li class="beat is-on" data-beat="0">
+              <time datetime="17:00">17:00 · piatok</time>
+              <h3>Prevezmeš techniku</h3>
+              <p>
+                Príde si po jeden kufor a zrolované plátno. Za desať minút ti ukážem, čo kam
+                patrí, a odchádzaš.
+              </p>
+            </li>
+            <li class="beat" data-beat="1">
+              <time datetime="21:30">21:30 · zotmilo sa</time>
+              <h3>Obraz má 200 palcov</h3>
+              <p>
+                Premietať sa dá až za tmy. Zvuk pokryje bežnú záhradu, hlasitosť si riadiš
+                sám.
+              </p>
+            </li>
+            <li class="beat" data-beat="2">
+              <time datetime="10:00">10:00 · sobota</time>
+              <h3>Vrátiš to ráno</h3>
+              <p>
+                Zložené, suché a v tom istom kufri. Ak v noci padla rosa, nechaj plátno
+                dopoludnia rozložené a dones ho neskôr.
+              </p>
+            </li>
+          </ol>
+
+          <!-- Časová os večera. Je to zároveň ukazovateľ, kde v scéne si. -->
+          <div class="dusk__timeline" aria-hidden="true">
+            <span class="dusk__track"><i id="duskFill"></i></span>
+            <span class="dusk__marks">
+              <b style="--at: 0%">17:00</b>
+              <b style="--at: 42%">21:30</b>
+              <b style="--at: 100%">10:00</b>
+            </span>
+          </div>
         </div>
       </section>
 
@@ -296,7 +335,7 @@
               <h3>Reproduktor</h3>
               <p>
                 Bluetooth aj kábel, vlastná batéria. Na bežnú záhradu má hlasitosti viac než
-                dosť — susedia ti poďakujú, ak ju nedáš naplno.
+                dosť. Susedia ti poďakujú, ak ju nedáš naplno.
               </p>
               <ul>
                 <li>Výdrž na celý film aj bez zásuvky</li>
@@ -361,7 +400,7 @@
                 10<small>minút podľa návodu</small>
               </p>
               <p class="dim reveal">
-                Nepotrebuješ náradie ani nikoho na pomoc. Zvládne to jeden dospelý — a deti
+                Nepotrebuješ náradie ani nikoho na pomoc. Zvládne to jeden dospelý a deti
                 budú aj tak chcieť pomáhať.
               </p>
             </div>
@@ -369,7 +408,7 @@
             <ol class="setup__steps" id="setupSteps">
               <div class="setup__spine" aria-hidden="true"><i id="setupSpine"></i></div>
               <li class="step">
-                <span class="meta">0:00 — 2:00</span>
+                <span class="meta">0:00 – 2:00</span>
                 <h3>Rozlož plátno na rovnú plochu</h3>
                 <p>
                   Chrbtom k domu, aby ste sedeli tvárou od svetiel. Pod plátno nedávaj nič
@@ -377,22 +416,22 @@
                 </p>
               </li>
               <li class="step">
-                <span class="meta">2:00 — 4:00</span>
+                <span class="meta">2:00 – 4:00</span>
                 <h3>Zapoj ventilátor a ukotvi</h3>
                 <p>
-                  Plátno sa nafúkne asi za minútu. Potom zatlač štyri kolíky a napni lanká —
+                  Plátno sa nafúkne asi za minútu. Potom zatlač štyri kolíky a napni lanká.
                   toto nevynechávaj ani za bezvetria.
                 </p>
               </li>
               <li class="step">
-                <span class="meta">4:00 — 6:00</span>
+                <span class="meta">4:00 – 6:00</span>
                 <h3>Postav projektor 3 – 4 metre od plátna</h3>
                 <p>
                   Na stolík alebo debnu, do výšky asi jedného metra. Zapoj ho do predlžovačky.
                 </p>
               </li>
               <li class="step">
-                <span class="meta">6:00 — 8:00</span>
+                <span class="meta">6:00 – 8:00</span>
                 <h3>Zaostri obraz a spáruj zvuk</h3>
                 <p>
                   Kolieskom doostri, kým nie sú titulky ostré. Reproduktor spáruj cez
@@ -400,7 +439,7 @@
                 </p>
               </li>
               <li class="step">
-                <span class="meta">8:00 — 10:00</span>
+                <span class="meta">8:00 – 10:00</span>
                 <h3>Pusti film</h3>
                 <p>
                   Z USB kľúča, z notebooku cez HDMI alebo z telefónu. A potom už len deky,
@@ -423,7 +462,7 @@
               </h2>
               <p class="dim reveal" style="max-width: 52ch; margin-bottom: 2.5rem">
                 Kliknutím na voľný deň si ho predbežne držíš. Termín zmizne z kalendára hneď,
-                ako pošleš žiadosť — nikto iný ho už nedostane.
+                ako pošleš žiadosť. Nikto iný ho už nedostane.
               </p>
 
               <div class="cal__bar">
@@ -538,7 +577,7 @@
                     <input type="checkbox" id="wifi" name="wifi" />
                     <span>
                       Mám v záhrade Wi-Fi. <span class="dim">(nepovinné)</span>
-                      <small>Bez Wi-Fi to funguje tiež — film pustíš z USB alebo notebooku.</small>
+                      <small>Bez Wi-Fi to funguje tiež, film pustíš z USB alebo notebooku.</small>
                     </span>
                   </label>
                   <label class="check" id="check-terms">
@@ -653,7 +692,7 @@
               <h3>Keď hlásia dážď alebo vietor</h3>
               <p class="dim" style="max-width: 60ch">
                 Plátno je nafukovacie a projektor nie je vodotesný. Pri daždi alebo vetre nad
-                40 km/h sa nepremieta — a nie je to problém, na to slúži náhradný termín.
+                40 km/h sa nepremieta. A nie je to problém, na to slúži náhradný termín.
               </p>
               <div class="weather__steps">
                 <div>
@@ -716,7 +755,7 @@
           <div class="footer__col">
             <h4>Dobré vedieť</h4>
             <p class="dim">
-              Súkromná susedská iniciatíva. Nejde o službu obce ani o žiadnu kampaň —
+              Súkromná susedská iniciatíva. Nejde o službu obce ani o žiadnu kampaň.
               je to len požičané vybavenie.
             </p>
           </div>
