@@ -612,45 +612,6 @@ textarea {
   pointer-events: none;
 }
 
-/* ---------------------------------------------------------------- marquee */
-
-.marquee {
-  position: relative;
-  overflow: hidden;
-  padding-block: clamp(1.4rem, 3vh, 2.4rem);
-  border-block: 1px solid var(--line-soft);
-  background: var(--night-900);
-}
-.marquee__track {
-  display: flex;
-  width: max-content;
-  will-change: transform;
-}
-.marquee__group {
-  display: flex;
-  align-items: center;
-  flex: none;
-}
-.marquee__group span {
-  font-family: var(--font-display);
-  font-size: clamp(1.5rem, 3.4vw, 2.9rem);
-  line-height: 1;
-  color: var(--ivory);
-  padding-inline: clamp(1rem, 2.5vw, 2.2rem);
-  white-space: nowrap;
-}
-.marquee__group span:nth-child(even) {
-  font-style: italic;
-  color: var(--amber);
-}
-.marquee__group i {
-  width: 7px;
-  height: 7px;
-  flex: none;
-  border-radius: 50%;
-  border: 1px solid var(--ash-dim);
-}
-
 /* --------------------------------------------------------------- sekcie */
 
 .section {

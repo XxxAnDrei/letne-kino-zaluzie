@@ -185,41 +185,7 @@
     ease: "power2.inOut",
   });
 
-  /* ================================================== 4. PÁS S TEXTOM */
-
-  (function marquee() {
-    var track = $("marquee");
-    if (!track) return;
-    var group = track.querySelector(".marquee__group");
-    var width = group.offsetWidth;
-    if (!width) return;
-
-    var copies = Math.ceil((window.innerWidth * 2) / width) + 1;
-    for (var i = 0; i < copies; i += 1) track.appendChild(group.cloneNode(true));
-
-    var tween = gsap.to(track, {
-      x: -width,
-      duration: width / 55,
-      ease: "none",
-      repeat: -1,
-      modifiers: { x: gsap.utils.unitize(gsap.utils.wrap(-width, 0)) },
-    });
-
-    // Pás reaguje na skrolovanie: zrýchli a otočí sa podľa smeru pohybu.
-    ScrollTrigger.create({
-      onUpdate: function (self) {
-        var v = self.getVelocity();
-        var boost = gsap.utils.clamp(1, 7, 1 + Math.abs(v) / 900);
-        gsap.to(tween, {
-          timeScale: (v < 0 ? -1 : 1) * boost,
-          duration: 0.35,
-          overwrite: true,
-        });
-      },
-    });
-  })();
-
-  /* ================================================== 5. ODHAĽOVANIE */
+  /* ================================================== 4. ODHAĽOVANIE */
 
   function revealBatch() {
     // Posun sa nastaví skôr, než batch vznikne — inak by prvky viditeľné pri
@@ -261,7 +227,7 @@
     );
   });
 
-  /* ================================================== 6. SÚMRAK → NOC */
+  /* ================================================== 5. SÚMRAK → NOC */
 
   (function duskScene() {
     var section = document.querySelector(".dusk");
@@ -309,7 +275,7 @@
     });
   })();
 
-  /* ================================================== 7. CIEVKA OBSAHU */
+  /* ================================================== 6. CIEVKA OBSAHU */
 
   (function reel() {
     var section = document.querySelector(".reel");
@@ -335,7 +301,7 @@
     });
   })();
 
-  /* ================================================== 8. ZAPOJENIE */
+  /* ================================================== 7. ZAPOJENIE */
 
   (function setup() {
     var list = $("setupSteps");
@@ -391,7 +357,7 @@
     }
   })();
 
-  /* ================================================== 9. KALENDÁR A LÍSTOK */
+  /* ================================================== 8. KALENDÁR A LÍSTOK */
 
   document.addEventListener("kino:calendar", function () {
     var cells = $$("#calGrid .day:not(.day--empty)");
@@ -438,7 +404,7 @@
     ScrollTrigger.refresh();
   });
 
-  /* ================================================== 10. KURZOR */
+  /* ================================================== 9. KURZOR */
 
   (function cursor() {
     if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
@@ -464,7 +430,7 @@
     });
   })();
 
-  /* ================================================== 11. TYPOGRAFIA */
+  /* ================================================== 10. TYPOGRAFIA */
 
   function splitHeadings() {
     if (!canSplit) return;
