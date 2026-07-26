@@ -654,19 +654,6 @@ textarea {
   display: grid;
   gap: 0.9rem;
 }
-.story__proof > div {
-  position: relative;
-  overflow: hidden;
-}
-.story__proof img {
-  width: 100%;
-  aspect-ratio: 1800 / 752;
-  object-fit: cover;
-  filter: saturate(0.9) brightness(0.88);
-  transform: scale(1.06);
-  transform-origin: center 60%;
-  will-change: transform;
-}
 .story__proof figcaption {
   justify-self: end;
   text-align: right;
@@ -717,50 +704,135 @@ textarea {
   color: var(--amber);
 }
 
+/* ------------------------------------------------------------- výkresy */
+
+/* Vlastná grafika v jazyku technického výkresu — toho laminovaného návodu,
+   ktorý je podľa textu v kufri navrchu. Nadväzuje na line-art ikony v balení,
+   takže stránka neťahá všetko z jedného videa. */
+.draw {
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+.draw path,
+.draw circle,
+.draw rect {
+  vector-effect: non-scaling-stroke;
+}
+
+.d-line,
+.d-thin,
+.d-frame,
+.d-guy,
+.d-dim,
+.d-tick,
+.d-ext,
+.d-plot,
+.d-diag,
+.d-hatch {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.d-line { stroke: color-mix(in oklab, var(--ivory) 55%, transparent); stroke-width: 1.6; }
+.d-thin { stroke: color-mix(in oklab, var(--ivory) 42%, transparent); stroke-width: 1.4; }
+.d-hatch { stroke: color-mix(in oklab, var(--ivory) 16%, transparent); stroke-width: 1.2; }
+.d-frame { stroke: var(--ivory); stroke-width: 2.4; }
+.d-guy { stroke: color-mix(in oklab, var(--ivory) 34%, transparent); stroke-width: 1.2; stroke-dasharray: 6 5; }
+.d-surface { fill: color-mix(in oklab, var(--ivory) 8%, transparent); stroke: color-mix(in oklab, var(--ivory) 30%, transparent); stroke-width: 1.2; }
+.d-diag { stroke: color-mix(in oklab, var(--amber) 55%, transparent); stroke-width: 1.2; stroke-dasharray: 5 5; }
+
+/* Kótovanie má vlastnú farbu — je to vrstva merania, nie objekt. */
+.d-dim,
+.d-tick,
+.d-ext,
+.d-plot { stroke: color-mix(in oklab, var(--amber) 62%, transparent); stroke-width: 1.3; }
+.d-ext { stroke: color-mix(in oklab, var(--amber) 26%, transparent); stroke-width: 1; }
+.d-plot { stroke-dasharray: 8 6; }
+.d-num {
+  font-family: var(--font-mono);
+  font-size: 21px;
+  letter-spacing: 0.1em;
+  fill: var(--amber);
+}
+.d-num--sm { font-size: 17px; fill: var(--ash); letter-spacing: 0.14em; }
+.d-num--amber { font-size: 26px; }
+.d-fill { fill: color-mix(in oklab, var(--ivory) 62%, transparent); stroke: none; }
+
+/* Postava v mierke — bez toho by zdedila defaultné SVG plnenie a ťahy by zmizli. */
+.draw__figure circle {
+  fill: color-mix(in oklab, var(--ivory) 58%, transparent);
+  stroke: none;
+}
+.draw__figure path {
+  fill: none;
+  stroke: color-mix(in oklab, var(--ivory) 58%, transparent);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+}
+.d-glow {
+  fill: color-mix(in oklab, var(--amber) 26%, transparent);
+  stroke: none;
+  filter: blur(14px);
+}
+
+.story__proof .draw--scale {
+  max-height: min(64vh, 540px);
+}
+
 /* --------------------------------------------- pripnutá scéna súmrak → noc */
 
-/* Scéna je o prechode zo súmraku do noci, tak ho ukazuje na skutočnom zábere:
-   scroll pretáča video a dole beží časová os večera. Žiadna nakreslená obloha. */
 .dusk {
   position: relative;
   height: 100svh;
   overflow: hidden;
   display: grid;
-  align-items: end;
+  grid-template-rows: 1fr auto;
+  align-items: center;
 }
-.dusk__media {
+.dusk__sky {
+  position: absolute;
+  inset: 0;
+  z-index: -3;
+  background: linear-gradient(to bottom, var(--dusk-600) 0%, var(--dusk-700) 40%, var(--night-900) 100%);
+}
+.dusk__night {
   position: absolute;
   inset: 0;
   z-index: -2;
-}
-.dusk__still,
-.dusk__video {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  filter: saturate(0.9) contrast(1.04) brightness(0.74);
-}
-.dusk__video {
   opacity: 0;
-  transition: opacity 0.7s ease;
+  background: linear-gradient(to bottom, var(--night-850) 0%, var(--night-900) 45%, var(--night-950) 100%);
 }
-.dusk__video.is-ready {
-  opacity: 1;
-}
-.dusk__scrim {
+.dusk__stars {
   position: absolute;
-  inset: 0;
+  inset: 0 0 42% 0;
   z-index: -1;
-  background:
-    linear-gradient(to top, var(--night-950) 4%, color-mix(in oklab, var(--night-950) 55%, transparent) 34%, transparent 62%),
-    radial-gradient(ellipse 90% 70% at 50% 40%, transparent 45%, color-mix(in oklab, var(--night-950) 62%, transparent) 100%);
+  opacity: 0;
+  background-image:
+    radial-gradient(1.4px 1.4px at 12% 22%, var(--ivory), transparent),
+    radial-gradient(1.1px 1.1px at 28% 48%, var(--ivory-dim), transparent),
+    radial-gradient(1.6px 1.6px at 45% 14%, var(--ivory), transparent),
+    radial-gradient(1.2px 1.2px at 63% 38%, var(--ivory-dim), transparent),
+    radial-gradient(1.5px 1.5px at 78% 24%, var(--ivory), transparent),
+    radial-gradient(1.1px 1.1px at 88% 54%, var(--ivory-dim), transparent),
+    radial-gradient(1.3px 1.3px at 36% 68%, var(--ivory-dim), transparent),
+    radial-gradient(1.2px 1.2px at 71% 74%, var(--ivory), transparent),
+    radial-gradient(1px 1px at 8% 60%, var(--ivory-dim), transparent),
+    radial-gradient(1.4px 1.4px at 54% 84%, var(--ivory-dim), transparent);
 }
+.dusk__scene {
+  align-self: center;
+  width: min(100% - var(--gutter) * 2, 1500px);
+  margin-inline: auto;
+}
+.dusk__scene .draw--scene {
+  max-height: min(58vh, 520px);
+}
+
 .dusk__inner {
-  padding-bottom: clamp(2rem, 6vh, 4.5rem);
+  padding-bottom: clamp(2rem, 6vh, 4rem);
   display: grid;
-  gap: clamp(1.75rem, 5vh, 3.25rem);
+  gap: clamp(1.5rem, 4vh, 2.5rem);
 }
 
 .dusk__beats {
@@ -768,7 +840,7 @@ textarea {
   list-style: none;
   margin: 0;
   padding: 0;
-  min-height: clamp(11rem, 24vh, 14rem);
+  min-height: clamp(9.5rem, 21vh, 12rem);
   max-width: 46ch;
 }
 .beat {
@@ -777,8 +849,8 @@ textarea {
   opacity: 0;
   visibility: hidden;
   display: grid;
-  align-content: end;
-  gap: 0.55rem;
+  align-content: start;
+  gap: 0.5rem;
   transition: opacity 0.55s var(--ease-out), visibility 0.55s;
 }
 .beat.is-on {
@@ -837,59 +909,22 @@ textarea {
   color: var(--ash);
   white-space: nowrap;
 }
-.dusk__marks b:first-child {
-  transform: none;
-}
-.dusk__marks b:last-child {
-  transform: translateX(-100%);
-}
+.dusk__marks b:first-child { transform: none; }
+.dusk__marks b:last-child { transform: translateX(-100%); }
 
-/* Na výšku telefónu by object-fit: cover zo 16:9 vyrezal len stred a záhrada
-   by sa stratila. Záber preto dostane vlastný pás v pôvodnom pomere. */
 @media (max-width: 760px) {
-  .dusk {
-    grid-template-rows: auto 1fr;
-    align-items: stretch;
-    padding-top: clamp(4.5rem, 11vh, 6.5rem);
-  }
-  .dusk__media {
-    position: relative;
-    inset: auto;
-    z-index: 0;
-    aspect-ratio: 16 / 9;
-    overflow: hidden;
-  }
-  .dusk__media::after {
-    content: "";
-    position: absolute;
-    inset: auto 0 -1px 0;
-    height: 48%;
-    background: linear-gradient(to top, var(--night-950), transparent);
-  }
-  .dusk__scrim {
-    display: none;
-  }
-  /* Text nasleduje hneď za obrazom, časová os drží spodok — inak by medzi
-     nimi zostala diera cez pol displeja. */
-  .dusk__inner {
-    align-self: stretch;
-    grid-template-rows: auto 1fr;
-    padding-top: clamp(1.5rem, 4vh, 2.5rem);
-  }
-  .dusk__beats {
-    min-height: clamp(11rem, 26vh, 14rem);
-    max-width: none;
-  }
-  .dusk__timeline {
-    align-self: end;
-  }
+  .dusk__scene .draw--scene { max-height: 34vh; }
+  .dusk__beats { min-height: clamp(10rem, 24vh, 13rem); max-width: none; }
+  .d-num { font-size: 26px; }
+  .d-num--sm { font-size: 22px; }
 }
 
-/* Bez animácie sa scéna nepripína — záber sa zmestí do toku a momenty
-   stoja pod sebou. */
+/* Bez animácie sa scéna nepripína — momenty stoja pod sebou a výkres
+   je v koncovom stave. */
 .dusk.is-static {
   height: auto;
   padding-block: var(--sp-section);
+  grid-template-rows: auto auto;
 }
 .dusk.is-static .dusk__beats {
   min-height: 0;

@@ -30,6 +30,17 @@
     $$(".beat").forEach(function (n) { n.classList.add("is-on"); });
     var fill = $("duskFill");
     if (fill) fill.style.setProperty("--p", "1");
+
+    // Výkres záhrady zostane v tom stave, ktorý sekcia opisuje: postavené,
+    // rozsvietené, s ľuďmi na dekách. Zrolovaný kufor sa skryje.
+    var bundle = $("gBundle");
+    if (bundle) bundle.style.opacity = "0";
+    var night = $("duskNight");
+    if (night) night.style.opacity = "1";
+    var stars = $("duskStars");
+    if (stars) stars.style.opacity = "1";
+    var surface = $("duskSurface");
+    if (surface) surface.style.fill = "color-mix(in oklab, var(--ivory) 82%, transparent)";
   }
 
   function dropLeader() {
@@ -50,6 +61,8 @@
   gsap.registerPlugin(ScrollTrigger);
   var canSplit = typeof window.SplitText !== "undefined";
   if (canSplit) gsap.registerPlugin(SplitText);
+  var canDraw = typeof window.DrawSVGPlugin !== "undefined";
+  if (canDraw) gsap.registerPlugin(DrawSVGPlugin);
 
   /* ================================================== 1. PREDOHRA */
 
@@ -210,13 +223,6 @@
     });
   }
 
-  // Fotka v príbehu sa pri skrolovaní pomaly odzoomováva.
-  gsap.to(".story__proof img", {
-    scale: 1,
-    ease: "none",
-    scrollTrigger: { trigger: ".story__proof", start: "top bottom", end: "bottom top", scrub: true },
-  });
-
   gsap.utils.toArray(".eyebrow").forEach(function (row) {
     gsap.fromTo(
       row,
@@ -234,79 +240,103 @@
 
   (function duskScene() {
     var section = document.querySelector(".dusk");
-    if (!section) return;
+    var scene = $("duskScene");
+    if (!section || !scene) return;
 
     var beats = $$(".beat", section);
-    var video = $("duskVideo");
     var fill = $("duskFill");
 
     // Hranice momentov. Prvý beží od začiatku, takže scéna nie je nikdy bez textu.
     var marks = [0, 0.42, 0.72];
 
-    /* Video má 2,6 MB, tak sa načíta až keď sa sekcia blíži. Do vtedy je
-       v ráme statický záber, takže plátno nikdy nesvieti naprázdno. */
-    var seekable = false;
-    ScrollTrigger.create({
-      trigger: section,
-      start: "top bottom+=60%",
-      once: true,
-      onEnter: function () {
-        if (!video || !video.dataset.src) return;
-        video.addEventListener(
-          "loadeddata",
-          function () {
-            if (!isFinite(video.duration) || video.duration <= 0) return;
-            seekable = true;
-            video.classList.add("is-ready");
-          },
-          { once: true }
-        );
-        // Keď kodek chýba alebo sa načítanie nepodarí, zostane statický záber.
-        video.addEventListener("error", function () { seekable = false; }, { once: true });
-        video.src = video.dataset.src;
-        video.load();
+    // Východiskový stav: prázdna záhrada, plátno ešte leží zrolované.
+    gsap.set("#gScreen", { scaleY: 0.02, svgOrigin: "670 600" });
+    gsap.set(["#gGuy", "#gPeople", "#gLantern", "#gScreenGlow"], { autoAlpha: 0 });
+    gsap.set("#gKit", { autoAlpha: 0 });
+    gsap.set("#duskSurface", { fill: "color-mix(in oklab, var(--ivory) 8%, transparent)" });
+
+    var tl = gsap.timeline({
+      scrollTrigger: {
+        trigger: section,
+        start: "top top",
+        end: "+=300%",
+        pin: true,
+        scrub: 0.7,
+        anticipatePin: 1,
+        onUpdate: function (self) {
+          var p = self.progress;
+          if (fill) fill.style.setProperty("--p", String(p));
+          var active = 0;
+          for (var i = marks.length - 1; i >= 0; i -= 1) {
+            if (p >= marks[i]) { active = i; break; }
+          }
+          beats.forEach(function (beat, i) {
+            beat.classList.toggle("is-on", i === active);
+          });
+        },
       },
     });
 
-    ScrollTrigger.create({
-      trigger: section,
-      start: "top top",
-      end: "+=300%",
-      pin: true,
-      scrub: 0.6,
-      anticipatePin: 1,
-      onUpdate: function (self) {
-        var p = self.progress;
+    /* 17:00 — technika dorazí a postaví sa. */
+    if (canDraw) {
+      tl.from("#gGround path", { drawSVG: 0, duration: 0.07, ease: "none" }, 0)
+        .from("#gHedge path, #gTree path, #gTree circle", { drawSVG: 0, duration: 0.08, stagger: 0.01, ease: "none" }, 0.03)
+        .from("#gHouse path, #gHouse rect", { drawSVG: 0, duration: 0.08, stagger: 0.012, ease: "none" }, 0.05);
+    } else {
+      tl.from("#gGround, #gHedge, #gTree, #gHouse", { autoAlpha: 0, duration: 0.08, stagger: 0.02 }, 0);
+    }
 
-        // Scroll pretáča záber. Celý dej scény — padá noc — je v ňom naozaj,
-        // takže sa nemusí dokresľovať.
-        if (seekable) {
-          var t = gsap.utils.clamp(0, video.duration - 0.05, p * video.duration);
-          if (Math.abs(video.currentTime - t) > 1 / 30) video.currentTime = t;
-        }
+    // Kufor a zrolované plátno sú na zemi hneď od začiatku — technika dorazila.
+    tl.to("#gBundle", { autoAlpha: 0, duration: 0.05 }, 0.2)
+      .to("#gScreen", { scaleY: 1, duration: 0.12, ease: "power2.out" }, 0.19)
+      .to("#gGuy", { autoAlpha: 1, duration: 0.06 }, 0.3)
+      .to("#gKit", { autoAlpha: 1, duration: 0.07 }, 0.34);
 
-        if (fill) fill.style.setProperty("--p", String(p));
+    /* 21:30 — zotmie sa a projektor sa rozsvieti. */
+    tl.to("#duskNight", { opacity: 1, duration: 0.13, ease: "none" }, 0.42)
+      .to("#duskStars", { opacity: 1, duration: 0.12, ease: "none" }, 0.45)
+      .to("#gScreenGlow", { autoAlpha: 1, duration: 0.1 }, 0.46)
+      .to("#duskSurface", { fill: "color-mix(in oklab, var(--ivory) 82%, transparent)", duration: 0.09 }, 0.47)
+      .to("#gPeople", { autoAlpha: 1, duration: 0.08 }, 0.51)
+      .to("#gLantern", { autoAlpha: 1, duration: 0.08 }, 0.53);
 
-        var active = 0;
-        for (var i = marks.length - 1; i >= 0; i -= 1) {
-          if (p >= marks[i]) { active = i; break; }
-        }
-        beats.forEach(function (beat, i) {
-          beat.classList.toggle("is-on", i === active);
-        });
-      },
+    /* 10:00 — ráno sa všetko zloží späť do kufra. */
+    tl.to("#gScreenGlow", { autoAlpha: 0, duration: 0.07 }, 0.74)
+      .to("#duskSurface", { fill: "color-mix(in oklab, var(--ivory) 8%, transparent)", duration: 0.07 }, 0.74)
+      .to("#gPeople", { autoAlpha: 0, duration: 0.06 }, 0.75)
+      .to("#gLantern", { autoAlpha: 0, duration: 0.06 }, 0.76)
+      .to("#duskStars", { opacity: 0, duration: 0.08, ease: "none" }, 0.79)
+      .to("#duskNight", { opacity: 0.35, duration: 0.09, ease: "none" }, 0.79)
+      .to("#gGuy", { autoAlpha: 0, duration: 0.05 }, 0.83)
+      .to("#gScreen", { scaleY: 0.02, duration: 0.1, ease: "power2.in" }, 0.85)
+      .to("#gBundle", { autoAlpha: 1, duration: 0.06 }, 0.9);
+  })();
+
+  /* Mierkový výkres v príbehu sa nakreslí, keď naň prídeš. */
+  (function scaleDrawing() {
+    var svg = document.querySelector(".draw--scale");
+    if (!svg) return;
+
+    var tl = gsap.timeline({
+      scrollTrigger: { trigger: svg, start: "top 78%", once: true },
+      defaults: { ease: "none" },
     });
 
-    // Záber sa cez celú scénu nenápadne priblíži — jediný pohyb navyše.
-    gsap.fromTo(
-      ".dusk__media",
-      { scale: 1.08 },
-      {
-        scale: 1,
-        ease: "none",
-        scrollTrigger: { trigger: section, start: "top top", end: "+=300%", scrub: 0.6 },
-      }
-    );
+    if (canDraw) {
+      tl.from(svg.querySelectorAll(".draw__ground .d-line"), { drawSVG: 0, duration: 0.7 })
+        .from(svg.querySelectorAll(".draw__ground .d-hatch"), { drawSVG: 0, duration: 0.5 }, "-=0.4")
+        .from(svg.querySelectorAll(".draw__object .d-frame"), { drawSVG: 0, duration: 0.8, ease: "power1.inOut" }, "-=0.3")
+        .from(svg.querySelectorAll(".draw__dims .d-dim, .draw__dims .d-tick, .draw__dims .d-ext, .draw__plot .d-plot, .draw__plot .d-tick"),
+              { drawSVG: 0, duration: 0.6, stagger: 0.04 }, "-=0.25");
+    } else {
+      tl.from(svg.querySelectorAll("g"), { autoAlpha: 0, duration: 0.5, stagger: 0.08 });
+    }
+
+    tl.from(svg.querySelector(".d-surface"), { autoAlpha: 0, duration: 0.5 }, "-=0.6")
+      .from(svg.querySelectorAll(".draw__figure circle, .draw__figure path"),
+            { autoAlpha: 0, y: 12, duration: 0.5, stagger: 0.04, ease: "power2.out" }, "-=0.4")
+      .from(svg.querySelector(".d-diag"), { autoAlpha: 0, duration: 0.4 }, "-=0.3")
+      .from(svg.querySelectorAll(".d-num"), { autoAlpha: 0, duration: 0.45, stagger: 0.07, ease: "power2.out" }, "-=0.3");
   })();
 
   /* ================================================== 6. CIEVKA OBSAHU */
