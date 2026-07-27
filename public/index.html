@@ -9,14 +9,30 @@
       content="Bezplatné zapožičanie nafukovacieho plátna, projektora a reproduktora pre rodiny vo Veľkom Záluží. Vyber si voľný termín a pošli žiadosť."
     />
     <meta name="theme-color" content="#0b0f18" />
+
+    <!--
+      Adresy pre zdieľanie musia byť absolútne, inak Facebook a Messenger
+      obrázok ignorujú. Doménu vie až hosting, takže sa dopĺňa pri builde
+      (scripts/prepare-static.mjs). Lokálne zostávajú relatívne a nevadí to.
+    -->
+    <link rel="canonical" href="/" />
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="sk_SK" />
+    <meta property="og:site_name" content="Letné kino Veľké Zálužie" />
+    <meta property="og:url" content="/" />
     <meta property="og:title" content="Letné kino u vás na záhrade — Veľké Zálužie" />
     <meta
       property="og:description"
       content="Plátno, projektor a reproduktor na jeden večer. Bezplatne, pre obyvateľov Veľkého Zálužia."
     />
     <meta property="og:image" content="/media/kino-poster.jpg" />
+    <meta property="og:image:width" content="1600" />
+    <meta property="og:image:height" content="900" />
+    <meta
+      property="og:image:alt"
+      content="Nafukovacie plátno so svetlom projektora na záhrade po zotmení."
+    />
+    <meta name="twitter:card" content="summary_large_image" />
     <link rel="preload" as="image" href="/media/kino-poster.jpg" />
     <link rel="stylesheet" href="/assets/css/site.css" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
