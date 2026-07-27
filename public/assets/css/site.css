@@ -31,6 +31,14 @@
   --font-text: "Instrument Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", "Roboto Mono", monospace;
 
+  /*
+   * Koľko písmo presahuje riadok nadpisu. Instrument Serif má nad účiarou
+   * 0,99 em a pod ňou 0,31 em, spolu 1,30 em; riadok nadpisu je zámerne tesný,
+   * 0,94 em. Rozdiel 0,36 em teda trčí po 0,18 em nad a pod riadok.
+   * Používa sa tam, kde nábeh nadpisu beží cez masku s overflow.
+   */
+  --mask-bleed: 0.18em;
+
   --step--2: clamp(0.7rem, 0.68rem + 0.1vw, 0.76rem);
   --step--1: clamp(0.82rem, 0.79rem + 0.15vw, 0.9rem);
   --step-0: clamp(1rem, 0.96rem + 0.22vw, 1.125rem);
@@ -92,6 +100,22 @@ h4 {
   color: var(--ivory);
   margin: 0;
   text-wrap: balance;
+}
+
+/*
+ * SplitText rozreže nadpis na riadky a každý zabalí do masky s overflow: clip,
+ * vysokej presne na riadok. Pri riadkovaní 0,94 em tak maska odstrihne to, čo
+ * z písma trčí: hore striešku nad „Č" alebo „ž", dole chvost „y" a „p".
+ *
+ * Maska sa preto zvnútra rozšíri odsadením riadku a rovnaká hodnota sa vezme
+ * späť zápornými okrajmi masky. Text zostane na tom istom mieste a nadpis má
+ * rovnakú výšku ako predtým, len sa už nič neodreže.
+ */
+.sp-line {
+  padding-block: var(--mask-bleed);
+}
+.sp-line-mask {
+  margin-block: calc(-1 * var(--mask-bleed));
 }
 
 p {
@@ -532,9 +556,11 @@ textarea {
 .hero__title .ln {
   display: block;
   overflow: hidden;
+  margin-block: calc(-1 * var(--mask-bleed));
 }
 .hero__title .ln > span {
   display: block;
+  padding-block: var(--mask-bleed);
 }
 .hero__title i {
   font-style: italic;
