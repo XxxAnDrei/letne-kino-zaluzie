@@ -1,11 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 34 32">
   <rect width="34" height="32" fill="#111826" />
   <path
-    d="M1.8 26 L5 6 L17 11.4 L29 6 L32.2 26 Z"
+    d="M1.8 26 L5 6 L29 6 L32.2 26 Z"
     fill="none"
     stroke="#f2ece0"
     stroke-width="2"
     stroke-linejoin="round"
   />
-  <rect x="7" y="13.4" width="20" height="8.6" fill="#f0a94a" />
+  <rect x="7" y="11.7" width="20" height="8.6" fill="#f0a94a" />
 </svg>
