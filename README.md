@@ -198,9 +198,11 @@ cookie. Zálohovanie je vtedy kopírovanie `data/kino.sqlite`.
 ## Čo si ešte doplň
 
 - **Sezónu a časy** — priamo v paneli, netreba zasahovať do kódu.
-- **Rozmery plátna vo výkrese** — `≈ 5,2 × 3,4 m` v `index.html` je odvodené
-  z uhlopriečky 200 palcov. Ak máš údaje svojho kusu, prepíš ich; sú na
-  jednom mieste v SVG so `class="draw--scale"`.
+- **Vonkajší obrys plátna vo výkrese** — kótovaná je premietacia plocha
+  `3,70 × 2,10 m` (uhlopriečka 168″, formát 16 : 9). Rám okolo nej je zatiaľ
+  ilustračný, lebo vonkajší rozmer nafúknutého plátna nie je odmeraný. Keď ho
+  budeš mať, prepíš `d-frame` v SVG so `class="draw--scale"`; mierka výkresu je
+  81 jednotiek na meter.
 - V `public/media/` je len video a poster do hero. Ak ich vymeníš, zachovaj
   názvy alebo uprav `data-desktop` a `data-mobile` na prvku videa.
 
