@@ -99,35 +99,70 @@ v nastaveniach.
 | ------------------ | -------------------------------------------------------------- |
 | `ADMIN_PASSWORD`      | heslo do panela                                                  |
 | `SESSION_SECRET`      | podpisuje prihlasovaciu cookie; bez neho odhlásenie pri reštarte |
-| `TURSO_DATABASE_URL`  | adresa Turso databázy; bez nej sa použije lokálny súbor          |
+| `DATABASE_URL`        | adresa Postgresu (Supabase); má prednosť pred Tursom              |
+| `TURSO_DATABASE_URL`  | adresa Turso databázy                                             |
 | `TURSO_AUTH_TOKEN`    | token k Turso databáze                                            |
+| `PGPOOL_MAX`          | veľkosť fondu pripojení k Postgresu (predvolene 3)                |
 | `PORT`                | port servera (predvolene 3000), na Verceli sa ignoruje           |
 | `NODE_ENV`            | `production` zapne `secure` cookie — vyžaduje HTTPS              |
 | `DATA_DIR`            | kam sa ukladá lokálna databáza                                    |
 | `TRUST_PROXY_HOPS`    | počet proxy vrstiev pred aplikáciou (hosting zvyčajne 1)         |
 
+## Databáza
+
+Server hovorí s tromi druhmi úložiska cez jedno rozhranie v `server/driver.js`.
+Vyberie si podľa premenných prostredia:
+
+| Čo je nastavené                        | Kam sa pripojí          |
+| -------------------------------------- | ----------------------- |
+| `DATABASE_URL=postgres://…`            | Postgres (Supabase)     |
+| `TURSO_DATABASE_URL=libsql://…`        | Turso                   |
+| nič z toho                             | lokálny súbor v `DATA_DIR` |
+
+Dopyty sú písané raz, so zástupnými `?`; pre Postgres si ich ovládač preloží na
+`$1, $2…`. Rozdiely medzi dialektmi sú len dva a oba sú v `server/db.js`: typ
+primárneho kľúča a typ celého čísla. Ostatné — `ON CONFLICT`, `COALESCE`,
+čiastočný unikátny index — funguje v SQLite aj v Postgrese rovnako.
+
+Vďaka tomu sa dá medzi Supabase a Tursom prepnúť zmenou premennej prostredia,
+bez zásahu do kódu. Schéma sa vytvorí sama pri prvej požiadavke.
+
 ## Nasadenie na Vercel
 
-Databáza je SQLite cez klienta **libSQL**. Lokálne ukazuje na súbor, v produkcii
-na hostované **Turso** — SQL je v oboch prípadoch identické, takže sa nikde
-neprepisujú dopyty.
+Serverless funkcia má dočasný súborový systém, takže lokálny súbor tam nestačí —
+rezervácie by sa po každom nasadení stratili. Treba hostovanú databázu.
 
-Bez Turso by to na Verceli nefungovalo: serverless funkcia má dočasný súborový
-systém, takže by sa rezervácie po každom nasadení stratili.
+### So Supabase
 
-1. **Turso**: vytvor databázu a token.
+1. Vytvor projekt na [supabase.com](https://supabase.com). Netreba v ňom nič
+   klikať: tabuľky si aplikácia založí sama.
+2. **Project Settings → Database → Connection string → Transaction pooler.**
+   Skopíruj adresu s portom **6543**, nie 5432. Doplň do nej heslo k databáze.
+3. **Vercel**: naimportuj repozitár a nastav `DATABASE_URL`, `ADMIN_PASSWORD`,
+   `SESSION_SECRET` a `NODE_ENV=production`.
+4. Nasaď.
 
-   ```bash
-   turso db create letne-kino
-   turso db show letne-kino --url      # → TURSO_DATABASE_URL
-   turso db tokens create letne-kino   # → TURSO_AUTH_TOKEN
-   ```
+Prečo port 6543: priame pripojenie na 5432 drží jedno spojenie na inštanciu
+funkcie a Supabase by ich pri návale minul. Pooler (Supavisor) v transakčnom
+režime ich zdieľa; ovládač preto beží s vypnutými *prepared statements*, čo
+tento režim vyžaduje.
 
-2. **Vercel**: naimportuj repozitár a nastav premenné prostredia —
-   `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`, `ADMIN_PASSWORD`, `SESSION_SECRET`
-   a `NODE_ENV=production`.
+**Na čo si dať pozor:** projekt v bezplatnom pásme Supabase sa po približne
+týždni bez jediného dopytu uspí a prvá ďalšia požiadavka počká, kým sa zobudí.
+Pri sezónnej stránke sa to stane cez zimu takmer isto. Nie je to porucha a dáta
+sa nestrácajú, ale ak chceš mať istotu, buď si projekt raz za čas otvor, alebo
+zvoľ Turso — to sa neuspáva.
 
-3. Nasaď. Schéma sa vytvorí sama pri prvej požiadavke.
+### S Tursom
+
+```bash
+turso db create letne-kino
+turso db show letne-kino --url      # → TURSO_DATABASE_URL
+turso db tokens create letne-kino   # → TURSO_AUTH_TOKEN
+```
+
+Na Verceli potom nastav `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`,
+`ADMIN_PASSWORD`, `SESSION_SECRET` a `NODE_ENV=production`.
 
 Ako je to poskladané:
 
@@ -139,12 +174,13 @@ Ako je to poskladané:
 Ak by po prvom nasadení niektorá `/api/*` cesta vracala 404, pozri sa na
 `rewrites` vo `vercel.json` — to je jediné miesto, kde sa smerovanie rieši.
 
-**Zálohovanie:** `turso db shell letne-kino .dump > zaloha.sql`.
+**Zálohovanie:** v Supabase `Database → Backups`, prípadne `pg_dump "$DATABASE_URL"
+> zaloha.sql`. Pri Turse `turso db shell letne-kino .dump > zaloha.sql`.
 
 ## Nasadenie na vlastný server
 
-Rovnaký kód beží aj klasicky. Bez `TURSO_DATABASE_URL` použije lokálny súbor,
-takže stačí pripojiť trvalý disk na `/data`:
+Rovnaký kód beží aj klasicky. Bez `DATABASE_URL` a `TURSO_DATABASE_URL` použije
+lokálny súbor, takže stačí pripojiť trvalý disk na `/data`:
 
 ```bash
 docker build -t letne-kino .
@@ -178,10 +214,12 @@ api/
 server/
   app.js          všetky routy a bezpečnostné hlavičky
   index.js        lokálny beh: statické súbory a app.listen
-  db.js           libSQL klient, schéma a nastavenia
+  driver.js       pripojenie k Postgresu, Turse alebo lokálnemu súboru
+  db.js           schéma a nastavenia
   availability.js jediný zdroj pravdy o tom, či je termín voľný
   validate.js     validácia žiadosti so slovenskými hláškami
   auth.js         prihlásenie správcu, obmedzenie počtu pokusov
+  env.js          načíta .env bez závislosti
   dates.js        práca s dátumami v čase Europe/Bratislava
 public/
   index.html      verejná stránka

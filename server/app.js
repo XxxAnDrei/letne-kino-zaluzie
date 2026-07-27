@@ -117,21 +117,20 @@ const reservationCreateLimiter = successLimiter({
 async function createReservation(clean) {
   const year = clean.date.slice(0, 4);
   const now = new Date().toISOString();
-  const tx = await db.transaction();
-  try {
-    const maxRow = await tx.execute({
-      sql: `SELECT IFNULL(MAX(CAST(substr(ref, 9) AS INTEGER)), 0) AS max
-              FROM reservations WHERE ref LIKE ?`,
-      args: [`VZ-${year}-%`],
-    });
-    const ref = `VZ-${year}-${String(Number(maxRow.rows[0].max) + 1).padStart(3, '0')}`;
-    await tx.execute({
-      sql: `INSERT INTO reservations
-              (ref, date, backup_date, name, phone, email, municipality, address, note,
-               confirm_adult, confirm_manual, confirm_content, confirm_terms, confirm_privacy,
-               status, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)`,
-      args: [
+  return db.tx(async (tx) => {
+    const row = await tx.get(
+      `SELECT COALESCE(MAX(CAST(substr(ref, 9) AS INTEGER)), 0) AS max
+         FROM reservations WHERE ref LIKE ?`,
+      [`VZ-${year}-%`]
+    );
+    const ref = `VZ-${year}-${String(Number(row.max) + 1).padStart(3, '0')}`;
+    await tx.run(
+      `INSERT INTO reservations
+         (ref, date, backup_date, name, phone, email, municipality, address, note,
+          confirm_adult, confirm_manual, confirm_content, confirm_terms, confirm_privacy,
+          status, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)`,
+      [
         ref,
         clean.date,
         clean.backupDate,
@@ -148,14 +147,10 @@ async function createReservation(clean) {
         clean.privacy,
         now,
         now,
-      ],
-    });
-    await tx.commit();
+      ]
+    );
     return { ref };
-  } catch (err) {
-    await tx.rollback().catch(() => {});
-    throw err;
-  }
+  });
 }
 
 app.post(
@@ -392,7 +387,7 @@ app.post(
 
     await db.run(
       `UPDATE reservations
-          SET moved_from = IFNULL(moved_from, date), date = ?, backup_date = NULL, updated_at = ?
+          SET moved_from = COALESCE(moved_from, date), date = ?, backup_date = NULL, updated_at = ?
         WHERE id = ?`,
       [target, new Date().toISOString(), id]
     );
@@ -461,7 +456,7 @@ app.post(
     }
     const reason = typeof req.body?.reason === 'string' ? req.body.reason.slice(0, 200) : null;
     await db.run(
-      'INSERT INTO blackouts (date, reason, created_at) VALUES (?, ?, ?) ON CONFLICT(date) DO UPDATE SET reason = excluded.reason',
+      'INSERT INTO blackouts (date, reason, created_at) VALUES (?, ?, ?) ON CONFLICT (date) DO UPDATE SET reason = excluded.reason',
       [date, reason, new Date().toISOString()]
     );
     res.status(201).json({ ok: true });
@@ -506,7 +501,7 @@ app.post(
       return;
     }
     await db.run(
-      'INSERT INTO slot_rules (date, scope, created_at) VALUES (?, ?, ?) ON CONFLICT(date) DO UPDATE SET scope = excluded.scope',
+      'INSERT INTO slot_rules (date, scope, created_at) VALUES (?, ?, ?) ON CONFLICT (date) DO UPDATE SET scope = excluded.scope',
       [date, scope, new Date().toISOString()]
     );
     res.status(201).json({ ok: true });
@@ -546,7 +541,7 @@ app.post(
     }
     const reason = typeof req.body?.reason === 'string' ? req.body.reason.slice(0, 200) : null;
     await db.run(
-      'INSERT INTO blocklist (value, reason, created_at) VALUES (?, ?, ?) ON CONFLICT(value) DO UPDATE SET reason = excluded.reason',
+      'INSERT INTO blocklist (value, reason, created_at) VALUES (?, ?, ?) ON CONFLICT (value) DO UPDATE SET reason = excluded.reason',
       [value, reason, new Date().toISOString()]
     );
     res.status(201).json({ ok: true });

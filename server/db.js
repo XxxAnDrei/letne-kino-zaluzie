@@ -1,86 +1,52 @@
-import fs from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { createClient } from '@libsql/client';
+import { db, kind, describe } from './driver.js';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-
-/*
- * Jeden klient pre lokálny beh aj pre Vercel. Lokálne ukazuje na súbor,
- * v produkcii na Turso — SQL je v oboch prípadoch identické, takže sa
- * netreba starať o rozdiely dialektov.
- */
-function resolveUrl() {
-  if (process.env.TURSO_DATABASE_URL) return process.env.TURSO_DATABASE_URL;
-  const dataDir = process.env.DATA_DIR || path.join(__dirname, '..', 'data');
-  fs.mkdirSync(dataDir, { recursive: true });
-  return `file:${path.join(dataDir, 'kino.sqlite')}`;
-}
-
-const url = resolveUrl();
-export const isRemote = !url.startsWith('file:');
-
-const client = createClient({
-  url,
-  authToken: process.env.TURSO_AUTH_TOKEN,
-});
-
-/* Tenká vrstva nad klientom, aby volania na mieste použitia zostali čitateľné. */
-export const db = {
-  async all(sql, args = []) {
-    return (await client.execute({ sql, args })).rows;
-  },
-  async get(sql, args = []) {
-    const { rows } = await client.execute({ sql, args });
-    return rows.length ? rows[0] : null;
-  },
-  async run(sql, args = []) {
-    const res = await client.execute({ sql, args });
-    return {
-      changes: res.rowsAffected,
-      lastInsertRowid: res.lastInsertRowid == null ? null : Number(res.lastInsertRowid),
-    };
-  },
-  transaction() {
-    return client.transaction('write');
-  },
-};
+export { db, describe };
 
 /* ------------------------------------------------------------------ schéma */
 
+/*
+ * Jediné, čo sa medzi dialektmi líši, sú typy kľúčov a celých čísel.
+ * Zvyšok SQL — ON CONFLICT, čiastočný unikátny index, COALESCE — je
+ * v SQLite aj v Postgrese rovnaký.
+ */
+const T =
+  kind === 'postgres'
+    ? { id: 'BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY', int: 'SMALLINT', big: 'BIGINT' }
+    : { id: 'INTEGER PRIMARY KEY AUTOINCREMENT', int: 'INTEGER', big: 'INTEGER' };
+
 const SCHEMA = [
   `CREATE TABLE IF NOT EXISTS reservations (
-    id            INTEGER PRIMARY KEY AUTOINCREMENT,
-    ref           TEXT    NOT NULL UNIQUE,
-    date          TEXT    NOT NULL,
+    id            ${T.id},
+    ref           TEXT NOT NULL UNIQUE,
+    date          TEXT NOT NULL,
     backup_date   TEXT,
     moved_from    TEXT,
-    name          TEXT    NOT NULL,
-    phone         TEXT    NOT NULL,
-    email         TEXT    NOT NULL,
-    municipality  TEXT    NOT NULL,
-    address       TEXT    NOT NULL,
+    name          TEXT NOT NULL,
+    phone         TEXT NOT NULL,
+    email         TEXT NOT NULL,
+    municipality  TEXT NOT NULL,
+    address       TEXT NOT NULL,
     note          TEXT,
-    confirm_adult   INTEGER NOT NULL DEFAULT 0,
-    confirm_manual  INTEGER NOT NULL DEFAULT 0,
-    confirm_content INTEGER NOT NULL DEFAULT 0,
-    confirm_terms   INTEGER NOT NULL DEFAULT 0,
-    confirm_privacy INTEGER NOT NULL DEFAULT 0,
-    status        TEXT    NOT NULL DEFAULT 'pending',
+    confirm_adult   ${T.int} NOT NULL DEFAULT 0,
+    confirm_manual  ${T.int} NOT NULL DEFAULT 0,
+    confirm_content ${T.int} NOT NULL DEFAULT 0,
+    confirm_terms   ${T.int} NOT NULL DEFAULT 0,
+    confirm_privacy ${T.int} NOT NULL DEFAULT 0,
+    status        TEXT NOT NULL DEFAULT 'pending',
     admin_note    TEXT,
     handout_at    TEXT,
     handout_items TEXT,
     return_at     TEXT,
     return_items  TEXT,
     condition_note TEXT,
-    created_at    TEXT    NOT NULL,
-    updated_at    TEXT    NOT NULL
+    created_at    TEXT NOT NULL,
+    updated_at    TEXT NOT NULL
   )`,
   `CREATE TABLE IF NOT EXISTS blackouts (
-    id          INTEGER PRIMARY KEY AUTOINCREMENT,
-    date        TEXT NOT NULL UNIQUE,
-    reason      TEXT,
-    created_at  TEXT NOT NULL
+    id         ${T.id},
+    date       TEXT NOT NULL UNIQUE,
+    reason     TEXT,
+    created_at TEXT NOT NULL
   )`,
   `CREATE TABLE IF NOT EXISTS slot_rules (
     date       TEXT PRIMARY KEY,
@@ -88,7 +54,7 @@ const SCHEMA = [
     created_at TEXT NOT NULL
   )`,
   `CREATE TABLE IF NOT EXISTS blocklist (
-    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    id         ${T.id},
     value      TEXT NOT NULL UNIQUE,
     reason     TEXT,
     created_at TEXT NOT NULL
@@ -99,14 +65,14 @@ const SCHEMA = [
   )`,
   /*
    * Obmedzovanie počtu žiadostí musí byť v databáze, nie v pamäti procesu.
-   * Na Verceli beží každá požiadavka potenciálne v inej inštancii, takže
+   * Serverless funkcia beží pri každej požiadavke potenciálne inde, takže
    * počítadlo v pamäti by nechránilo nič.
    */
   `CREATE TABLE IF NOT EXISTS rate_hits (
-    id     INTEGER PRIMARY KEY AUTOINCREMENT,
+    id     ${T.id},
     bucket TEXT NOT NULL,
     key    TEXT NOT NULL,
-    at     INTEGER NOT NULL
+    at     ${T.big} NOT NULL
   )`,
   `CREATE INDEX IF NOT EXISTS idx_res_date   ON reservations(date)`,
   `CREATE INDEX IF NOT EXISTS idx_res_status ON reservations(status)`,
@@ -155,12 +121,12 @@ let ready = null;
 export function init() {
   if (!ready) {
     ready = (async () => {
-      for (const sql of SCHEMA) await client.execute(sql);
+      for (const sql of SCHEMA) await db.run(sql);
       for (const [key, value] of Object.entries(DEFAULT_SETTINGS)) {
-        await client.execute({
-          sql: 'INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO NOTHING',
-          args: [key, value],
-        });
+        await db.run(
+          'INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT (key) DO NOTHING',
+          [key, value]
+        );
       }
     })().catch((err) => {
       ready = null; // nech to ďalšia požiadavka skúsi znova
@@ -203,7 +169,7 @@ export async function setSettings(patch) {
   const entries = Object.entries(patch).filter(([key]) => SETTING_KEYS.includes(key));
   for (const [key, value] of entries) {
     await db.run(
-      'INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value',
+      'INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value',
       [key, String(value)]
     );
   }
