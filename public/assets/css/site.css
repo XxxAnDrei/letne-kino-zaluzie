@@ -1,4 +1,5 @@
-@import url("../fonts/fonts.css");
+/* Písma sa načítavajú vlastným <link> v hlavičke. @import by ich objavil až po
+   stiahnutí tohto súboru a text by naskočil o jedno kolo neskôr. */
 
 /* ============================================================================
    LETNÉ KINO — VEĽKÉ ZÁLUŽIE
@@ -460,6 +461,50 @@ textarea {
   justify-content: space-between;
   gap: 1.5rem;
 }
+@media (max-width: 860px) {
+  /* Značka, tlačidlo a ponuka sa musia zmestiť aj na 320 px širokú obrazovku. */
+  .masthead__inner {
+    gap: 0.75rem;
+  }
+  .wordmark {
+    gap: 0.5rem;
+    min-width: 0;
+  }
+  .wordmark__text b {
+    font-size: 1rem;
+  }
+  .wordmark__text span {
+    font-size: 0.54rem;
+    letter-spacing: 0.16em;
+  }
+  .nav .btn {
+    padding: 0.55rem 0.9rem;
+    font-size: 0.8rem;
+    white-space: nowrap;
+  }
+}
+
+/*
+ * Pod 560 px sa značka, tlačidlo aj ponuka do riadku nezmestia a začnú sa
+ * lámať do dvoch riadkov. Vypadne preto podnadpis značky a slovo pri ikone
+ * ponuky; tlačidlo si prístupný názov nesie v aria-label.
+ */
+@media (max-width: 560px) {
+  .wordmark__text span {
+    display: none;
+  }
+  .burger__label {
+    display: none;
+  }
+  .burger {
+    padding: 0 0.5rem;
+  }
+}
+@media (max-width: 340px) {
+  .wordmark__text {
+    display: none;
+  }
+}
 .wordmark {
   display: flex;
   align-items: center;
@@ -508,8 +553,119 @@ textarea {
   padding: 0.6rem 1.15rem;
   color: var(--btn-fg);
 }
+/* ------------------------------------------------------- ponuka na mobile */
+
+/*
+ * Do 860 px sa odkazy z hlavičky presunú do vysúvacej ponuky. Stránka má na
+ * telefóne cez 20 000 px, takže bez nej sa človek k spodným sekciám dostane
+ * jedine dlhým skrolovaním.
+ */
+.burger {
+  display: none;
+  align-items: center;
+  gap: 0.55rem;
+  min-height: 44px;
+  padding: 0 0.35rem;
+  background: none;
+  border: 0;
+  color: var(--ivory);
+  font: inherit;
+  cursor: pointer;
+}
+.burger__box {
+  display: grid;
+  gap: 5px;
+  width: 22px;
+}
+.burger__box i {
+  display: block;
+  height: 1.5px;
+  background: currentColor;
+  transition: transform 0.3s ease, opacity 0.2s ease;
+}
+.burger__label {
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+.menu-open .burger__box i:first-child {
+  transform: translateY(3.25px) rotate(45deg);
+}
+.menu-open .burger__box i:last-child {
+  transform: translateY(-3.25px) rotate(-45deg);
+}
+
+.sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  gap: 1rem;
+  padding: calc(var(--masthead-h, 68px) + 1rem) 1.25rem max(1.25rem, env(safe-area-inset-bottom));
+  background: color-mix(in oklab, var(--night-950) 96%, transparent);
+  backdrop-filter: blur(14px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  opacity: 0;
+  transition: opacity 0.28s ease;
+}
+.sheet.is-open {
+  opacity: 1;
+}
+.sheet__nav {
+  display: grid;
+  align-content: start;
+  gap: 0.15rem;
+}
+.sheet__nav a {
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.85rem 0;
+  border-bottom: 1px solid var(--line-soft);
+  text-decoration: none;
+  color: var(--ivory);
+}
+.sheet__nav a b {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 400;
+  line-height: 1.1;
+}
+.sheet__nav a span {
+  font-size: 0.82rem;
+  color: var(--ash);
+}
+.sheet__nav a:first-child b {
+  color: var(--amber);
+}
+.sheet__foot {
+  display: grid;
+  gap: 0.4rem;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+}
+.sheet__foot a {
+  padding: 0.35rem 0;
+  color: var(--ash);
+  text-decoration: none;
+}
+.menu-open,
+.menu-open body {
+  overflow: hidden;
+}
+
 @media (max-width: 860px) {
   .nav a:not(.btn) {
+    display: none;
+  }
+  .burger {
+    display: flex;
+  }
+}
+@media (min-width: 861px) {
+  .sheet {
     display: none;
   }
 }
@@ -2118,4 +2274,90 @@ textarea {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* =================================================== doladenie pre telefón */
+
+/*
+ * Čo sa na veľkej obrazovke číta ako drobný technický popisok, je na telefóne
+ * na hranici čitateľnosti. Pod 640 px sa preto zdvihne spodná hranica veľkosti
+ * písma a klikacie prvky dostanú výšku, ktorú sa dá trafiť palcom.
+ */
+@media (max-width: 640px) {
+  .meta,
+  .eyebrow,
+  .form__note,
+  .check,
+  .dim {
+    font-size: 0.78rem;
+  }
+  .d-num--sm {
+    font-size: 20px;
+  }
+
+  /* Odkazy v texte a v päte: aspoň 44 px na dotyk. */
+  .link,
+  .footer__col a,
+  .sheet__foot a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+
+  /* Zaškrtávacie políčka pri súhlasoch boli 20 × 20 px. */
+  .check input[type="checkbox"] {
+    width: 26px;
+    height: 26px;
+  }
+  .check {
+    gap: 0.9rem;
+    padding: 0.2rem 0;
+  }
+
+  /* Rozbaľovacie otázky v často kladených otázkach. */
+  .faq summary,
+  details > summary {
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+  }
+
+  /* Sumy pri dobrovoľnom príspevku a tlačidlá v lístku. */
+  .amount,
+  .act {
+    min-height: 46px;
+  }
+
+  /* Značka v päte nech sa dá trafiť celá. */
+  .footer__brand .wordmark {
+    min-height: 44px;
+  }
+}
+
+/*
+ * Skok z ponuky musí skončiť pod hlavičkou, nie za ňou. Bez tohto by nadpis
+ * sekcie zmizol za pevne ukotvenou lištou.
+ *
+ * Skúšal som sem dať aj content-visibility na sekcie mimo obrazovky, ale
+ * odhadovaná výška posunula cieľ skoku o stovky pixelov. Fungujúca ponuka je
+ * viac než ušetrené prekreslenie.
+ */
+section[id],
+div[id="prispevok"] {
+  scroll-margin-top: calc(var(--masthead-h, 68px) + 0.75rem);
+}
+
+/*
+ * Predohra bez odpočtu. Trieda pribudne v boot.js ešte pred vykreslením,
+ * takže sa clona ani odpočet nikdy nezobrazia a úvodný text je vidieť hneď.
+ */
+.no-intro .leader,
+.no-intro .iris {
+  display: none !important;
+}
+.no-intro .beam {
+  opacity: 1;
+}
+.no-intro .hero .reveal {
+  opacity: 1;
 }

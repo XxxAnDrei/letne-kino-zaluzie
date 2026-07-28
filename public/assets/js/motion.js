@@ -87,10 +87,18 @@
   }
 
   // Počiatočné stavy, nech nič neprebliskne pred spustením timeline.
-  gsap.set('[data-hero="meta"], [data-hero="specs"], [data-hero="cta"], [data-hero="hint"]', {
-    autoAlpha: 0,
-    y: 26,
-  });
+  /*
+   * Bez predohry (telefón) sa úvodný text neschováva. Keby sa schoval, čakal
+   * by na stiahnutie GSAP a najväčší prvok na obrazovke by naskočil o sekundy
+   * neskôr. Na veľkej obrazovke ostáva nábeh zachovaný.
+   */
+  var noIntro = document.documentElement.classList.contains("no-intro");
+  if (!noIntro) {
+    gsap.set('[data-hero="meta"], [data-hero="specs"], [data-hero="cta"], [data-hero="hint"]', {
+      autoAlpha: 0,
+      y: 26,
+    });
+  }
 
   function playLeader() {
     document.body.classList.add("is-locked");
@@ -137,7 +145,9 @@
     return tl;
   }
 
-  if (seenLeader) {
+  if (noIntro) {
+    dropLeader(); // text je viditeľný z CSS, netreba ho nič odhaľovať
+  } else if (seenLeader) {
     dropLeader();
     heroIntro();
   } else {
@@ -204,10 +214,20 @@
   /* ================================================== 4. ODHAĽOVANIE */
 
   function revealBatch() {
+    /*
+     * Bez predohry sa úvod z odhaľovania vynecháva. Je to prvé, čo je na
+     * obrazovke vidieť, a čakať s ním na stiahnutie GSAP znamená mať niekoľko
+     * sekúnd prázdny úvod. Zvyšok stránky nabieha ako predtým.
+     */
+    var targetsAll = gsap.utils.toArray(".reveal").filter(function (n) {
+      return !noIntro || !n.closest(".hero");
+    });
+    if (!targetsAll.length) return;
+
     // Posun sa nastaví skôr, než batch vznikne — inak by prvky viditeľné pri
     // načítaní odštartovali z nuly a trhlo by nimi.
-    gsap.set(".reveal", { y: 34 });
-    ScrollTrigger.batch(".reveal", {
+    gsap.set(targetsAll, { y: 34 });
+    ScrollTrigger.batch(targetsAll, {
       start: "top 88%",
       once: true,
       onEnter: function (targets) {

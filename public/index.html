@@ -33,9 +33,23 @@
       content="Nafukovacie plátno so svetlom projektora na záhrade po zotmení."
     />
     <meta name="twitter:card" content="summary_large_image" />
-    <link rel="preload" as="image" href="/media/kino-poster.jpg" />
+    <link rel="preload" as="image" href="/media/kino-poster.jpg" fetchpriority="high" />
+
+    <!--
+      Písma sa sťahujú súbežne so štýlmi. Keby na ne prehliadač prišiel až
+      z @import vo vnútri site.css, čakal by, kým sa stiahne celý štýl.
+      Prednačítajú sa len dve latinské rezy, ktoré sú vidieť na prvej obrazovke;
+      zvyšok dotiahne fonts.css podľa toho, čo je na stránke potrebné.
+    -->
+    <link rel="preload" as="font" type="font/woff2" crossorigin
+          href="/assets/fonts/instrument-serif-normal-400-lat.woff2" />
+    <link rel="preload" as="font" type="font/woff2" crossorigin
+          href="/assets/fonts/instrument-sans-normal-400700-lat.woff2" />
+    <link rel="stylesheet" href="/assets/fonts/fonts.css" />
     <link rel="stylesheet" href="/assets/css/site.css" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <!-- Bez defer zámerne: pridáva triedu .js ešte pred prvým vykreslením.
+         S odkladom by obsah, ktorý má odhaliť animácia, na okamih preblikol. -->
     <script src="/assets/js/boot.js"></script>
   </head>
   <body>
@@ -86,8 +100,32 @@
           <a href="#podmienky">Podmienky</a>
           <a class="btn" href="#terminy">Voľné termíny</a>
         </nav>
+
+        <!-- Na telefóne sa odkazy schovajú sem. Tlačidlo je v HTML natvrdo,
+             ale skryté; ukáže ho až nav.js, aby bez JS nezostalo mŕtve. -->
+        <button class="burger" id="menuBtn" type="button" aria-expanded="false"
+                aria-controls="menuPanel" aria-label="Ponuka" hidden>
+          <span class="burger__box" aria-hidden="true"><i></i><i></i></span>
+          <span class="burger__label">Menu</span>
+        </button>
       </div>
     </header>
+
+    <div class="sheet" id="menuPanel" hidden>
+      <nav class="sheet__nav" aria-label="Ponuka">
+        <a href="#terminy"><b>Voľné termíny</b><span>Vyber si večer a pošli žiadosť</span></a>
+        <a href="#pribeh"><b>Ako to funguje</b><span>Od žiadosti po vrátenie</span></a>
+        <a href="#balenie"><b>Vybavenie</b><span>Čo všetko je v balení</span></a>
+        <a href="#potrebujes"><b>Čo potrebuješ</b><span>Miesto, prúd a počasie</span></a>
+        <a href="#iniciator"><b>Iniciátor</b><span>Kto za projektom stojí</span></a>
+        <a href="#prispevok"><b>Podporiť</b><span>Dobrovoľný príspevok pre OZ</span></a>
+        <a href="#podmienky"><b>Podmienky</b><span>Pravidlá, dážď a ochrana údajov</span></a>
+      </nav>
+      <div class="sheet__foot">
+        <a href="tel:+421911705236">+421 911 705 236</a>
+        <a href="mailto:praznovskyandrej@gmail.com">praznovskyandrej@gmail.com</a>
+      </div>
+    </div>
 
     <main id="obsah">
       <!-- ================================================== ÚVOD -->
@@ -1191,12 +1229,18 @@
       </div>
     </footer>
 
-    <script src="/vendor/gsap/gsap.min.js"></script>
-    <script src="/vendor/gsap/ScrollTrigger.min.js"></script>
-    <script src="/vendor/gsap/SplitText.min.js"></script>
-    <script src="/vendor/gsap/DrawSVGPlugin.min.js"></script>
-    <script src="/assets/js/booking.js"></script>
-    <script src="/assets/js/donation.js"></script>
-    <script src="/assets/js/motion.js"></script>
+    <!--
+      Všetko s defer: skripty sa sťahujú súbežne s parsovaním stránky a spustia
+      sa až po ňom, v poradí, v akom sú tu napísané. GSAP tak nezdržuje prvé
+      vykreslenie a motion.js má istotu, že booking.js aj nav.js už bežali.
+    -->
+    <script src="/assets/js/nav.js" defer></script>
+    <script src="/assets/js/booking.js" defer></script>
+    <script src="/assets/js/donation.js" defer></script>
+    <script src="/vendor/gsap/gsap.min.js" defer></script>
+    <script src="/vendor/gsap/ScrollTrigger.min.js" defer></script>
+    <script src="/vendor/gsap/SplitText.min.js" defer></script>
+    <script src="/vendor/gsap/DrawSVGPlugin.min.js" defer></script>
+    <script src="/assets/js/motion.js" defer></script>
   </body>
 </html>
