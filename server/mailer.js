@@ -33,6 +33,25 @@ export function adminAddress() {
   return conf().admin;
 }
 
+/**
+ * Stav nastavenia pre správcu. Kľúč sa nikdy nevracia, len či je vyplnený
+ * a či vyzerá ako kľúč Brevo. Adresy vrátiť treba — správca si musí overiť,
+ * že odosielateľ sedí s tým, čo má overené v Breve.
+ */
+export function mailStatus() {
+  const c = conf();
+  return {
+    pripravene: mailReady(),
+    klucNastaveny: Boolean(c.key),
+    klucVyzeraAkoBrevo: /^xkeysib-/.test(c.key),
+    odosielatel: c.from || null,
+    menoOdosielatela: c.fromName,
+    upozorneniaNa: c.admin || null,
+    odpovedatNa: c.replyTo || null,
+    chyba: [!c.key && 'BREVO_API_KEY', !c.from && 'MAIL_FROM', !c.admin && 'MAIL_ADMIN'].filter(Boolean),
+  };
+}
+
 /** Poznámky do štartovacieho výpisu, nech je hneď vidieť, či e-maily pôjdu. */
 export function mailStartupNotes() {
   const c = conf();
@@ -46,9 +65,23 @@ export function mailStartupNotes() {
 /**
  * Odošle jednu správu. Nikdy nevyhodí výnimku — vracia { ok, error }.
  */
+/*
+ * Aby sa log nezaplavil pri každej žiadosti, hlásenie o chýbajúcom nastavení
+ * sa vypíše raz za život inštancie. Mlčať sa nedá — bez toho vyzerá chýbajúca
+ * premenná úplne rovnako ako funkčné odosielanie a hľadá sa to naslepo.
+ */
+let warned = false;
+
 export async function sendMail({ to, toName, subject, text, html }) {
   const c = conf();
-  if (!mailReady()) return { ok: false, error: 'e-mail nie je nastavený' };
+  if (!mailReady()) {
+    if (!warned) {
+      warned = true;
+      const chyba = [!c.key && 'BREVO_API_KEY', !c.from && 'MAIL_FROM'].filter(Boolean);
+      console.error(`e-mail sa neposiela, chýba: ${chyba.join(', ')}`);
+    }
+    return { ok: false, error: 'e-mail nie je nastavený' };
+  }
   if (!to) return { ok: false, error: 'chýba príjemca' };
 
   const body = {

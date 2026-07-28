@@ -18,7 +18,7 @@ import {
   requireAdmin,
   successLimiter,
 } from './auth.js';
-import { adminAddress, mailReady, sendAll } from './mailer.js';
+import { adminAddress, mailStatus, sendAll, sendMail } from './mailer.js';
 import { adminNewRequest, guestDecision, guestReceived } from './emails.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -381,6 +381,47 @@ app.patch(
     }
 
     res.json({ reservation: updated });
+  })
+);
+
+/*
+ * Diagnostika e-mailov. Bez nej sa chýbajúca premenná hľadá naslepo: stránka
+ * sa tvári úplne rovnako, či sa e-mail poslal alebo nie. GET len ukáže stav,
+ * POST skúsi naozaj odoslať a vráti presnú odpoveď Brevo.
+ */
+app.get(
+  '/api/admin/mail',
+  requireAdmin,
+  route(async (_req, res) => {
+    res.set('Cache-Control', 'no-store');
+    res.json(mailStatus());
+  })
+);
+
+app.post(
+  '/api/admin/mail/test',
+  requireAdmin,
+  route(async (_req, res) => {
+    const stav = mailStatus();
+    if (!stav.pripravene) {
+      res.status(400).json({ error: `E-mail nie je nastavený, chýba: ${stav.chyba.join(', ')}`, stav });
+      return;
+    }
+    const cielova = stav.upozorneniaNa || stav.odosielatel;
+    const teraz = new Date().toLocaleString('sk-SK', { timeZone: 'Europe/Bratislava' });
+    const vysledok = await sendMail({
+      to: cielova,
+      subject: 'Skúšobný e-mail z letného kina',
+      text:
+        `Toto je skúšobná správa z rezervačnej stránky letného kina.\n\n` +
+        `Ak ti prišla, odosielanie funguje a upozornenia o nových žiadostiach\n` +
+        `budú chodiť na túto adresu.\n\nOdoslané: ${teraz}\n`,
+    });
+    if (!vysledok.ok) {
+      res.status(502).json({ error: `Brevo správu neprijalo: ${vysledok.error}`, stav });
+      return;
+    }
+    res.json({ ok: true, odoslaneNa: cielova, stav });
   })
 );
 

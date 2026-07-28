@@ -158,7 +158,46 @@
     loadSlotRules();
     loadBlocklist();
     loadSettings();
+    loadMailState();
   }
+
+  /* ------------------------------------------------------------- e-maily */
+
+  /*
+   * Bez tohto sa nefunkčné odosielanie hľadá naslepo: stránka vyzerá rovnako,
+   * či e-mail odišiel alebo nie. Tu je vidieť, čo je nastavené, a skúšobná
+   * správa vráti presnú odpoveď od Brevo.
+   */
+  function loadMailState() {
+    var box = $("mailState");
+    if (!box) return;
+    api("/api/admin/mail")
+      .then(function (s) {
+        if (!s.pripravene) {
+          box.innerHTML =
+            "<b>E-maily sa neposielajú.</b> Chýba: " +
+            esc(s.chyba.join(", ")) +
+            ". Doplň to v nastaveniach hostingu a nasaď znova.";
+          return;
+        }
+        var pozn = s.klucVyzeraAkoBrevo
+          ? ""
+          : " Pozor: kľúč nezačína na xkeysib, nemusí to byť API kľúč.";
+        box.innerHTML =
+          "Odosielateľ <b>" + esc(s.odosielatel) + "</b>, upozornenia chodia na <b>" +
+          esc(s.upozorneniaNa || "—") + "</b>." + esc(pozn);
+      })
+      .catch(function (e) { if (e.message !== "odhlásené") box.textContent = e.message; });
+  }
+
+  $("mailTest").addEventListener("click", function () {
+    var btn = $("mailTest");
+    btn.disabled = true;
+    api("/api/admin/mail/test", { method: "POST" })
+      .then(function (r) { toast("Skúšobný e-mail odoslaný na " + r.odoslaneNa + "."); })
+      .catch(function (e) { if (e.message !== "odhlásené") toast(e.message, true); })
+      .then(function () { btn.disabled = false; });
+  });
 
   /* ------------------------------------------------- určenie termínov */
 
