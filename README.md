@@ -79,6 +79,30 @@ relácia trvá 12 hodín.
 - údaje občianskeho združenia vrátane IBAN, ktoré idú do QR platby
 - export všetkých rezervácií do CSV (otvorí sa aj v Exceli s diakritikou)
 
+## E-maily
+
+Posielajú sa tri správy:
+
+| Kedy                       | Komu       | O čom                                          |
+| -------------------------- | ---------- | ---------------------------------------------- |
+| príde žiadosť              | správcovi  | kontakt, termín, poznámka, odkaz do panela     |
+| príde žiadosť              | žiadateľovi| termín je podržaný, ešte to nie je potvrdenie  |
+| žiadosť sa schváli/zamietne| žiadateľovi| potvrdenie s pokynmi, alebo dôvod zamietnutia  |
+
+Rozhodnutie odchádza len pri skutočnej zmene stavu, takže dopísanie internej
+poznámky k žiadosti nikomu e-mail nepošle.
+
+Odosiela sa cez **Brevo** a cez jeho HTTP API, nie cez SMTP: serverless funkcia
+žije pár sekúnd a držať v nej otvorené SMTP spojenie je pomalé. Adresa
+odosielateľa musí byť v Breve overená, inak ju Brevo odmietne.
+
+**E-mail nikdy nezhodí rezerváciu.** Keď kľúč chýba, keď Brevo vypadne alebo
+odpovie chybou, žiadosť sa aj tak uloží a človek uvidí svoj lístok; dôvod sa
+zapíše do logu. Na Verceli ho nájdeš v *Deployments → Runtime Logs*.
+
+Znenie správ je v `server/emails.js`, oddelené od odosielania, takže sa dá
+prepísať bez zasahovania do volania API.
+
 ## Dobrovoľný príspevok
 
 Sekcia je zámerne oddelená od rezervácie — príspevok nikdy nie je podmienkou
@@ -99,6 +123,10 @@ v nastaveniach.
 | ------------------ | -------------------------------------------------------------- |
 | `ADMIN_PASSWORD`      | heslo do panela                                                  |
 | `SESSION_SECRET`      | podpisuje prihlasovaciu cookie; bez neho odhlásenie pri reštarte |
+| `BREVO_API_KEY`       | kľúč k Brevu; bez neho sa e-maily neposielajú                    |
+| `MAIL_FROM`           | adresa odosielateľa, overená v Breve                             |
+| `MAIL_ADMIN`          | kam chodia upozornenia o nových žiadostiach                       |
+| `SITE_URL`            | verejná adresa stránky pre odkazy v e-mailoch                    |
 | `DATABASE_URL`        | adresa Postgresu (Supabase); má prednosť pred Tursom              |
 | `TURSO_DATABASE_URL`  | adresa Turso databázy                                             |
 | `TURSO_AUTH_TOKEN`    | token k Turso databáze                                            |
@@ -221,6 +249,8 @@ server/
   availability.js jediný zdroj pravdy o tom, či je termín voľný
   validate.js     validácia žiadosti so slovenskými hláškami
   auth.js         prihlásenie správcu, obmedzenie počtu pokusov
+  mailer.js       odosielanie cez Brevo, nikdy nezhodí rezerváciu
+  emails.js       znenie troch správ, oddelené od odosielania
   env.js          načíta .env bez závislosti
   dates.js        práca s dátumami v čase Europe/Bratislava
 public/

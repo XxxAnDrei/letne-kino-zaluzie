@@ -12,6 +12,35 @@ export function today() {
   return isoFormatter.format(new Date());
 }
 
+const skLong = new Intl.DateTimeFormat('sk-SK', {
+  timeZone: TZ,
+  weekday: 'long',
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+});
+
+/**
+ * Dátum po slovensky do e-mailov: „piatok 14. augusta 2026".
+ * Poludnie v UTC preto, že v ňom žiadne časové pásmo neprevráti deň.
+ */
+export function formatSk(iso) {
+  const [y, m, d] = iso.split('-').map(Number);
+  return skLong.format(new Date(Date.UTC(y, m - 1, d, 12)));
+}
+
+const skShort = new Intl.DateTimeFormat('sk-SK', {
+  timeZone: TZ,
+  day: 'numeric',
+  month: 'long',
+});
+
+/** Krátky tvar do predmetu e-mailu: „14. augusta". */
+export function formatSkShort(iso) {
+  const [y, m, d] = iso.split('-').map(Number);
+  return skShort.format(new Date(Date.UTC(y, m - 1, d, 12)));
+}
+
 export function isIsoDate(value) {
   if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
   const [y, m, d] = value.split('-').map(Number);

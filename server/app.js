@@ -18,6 +18,8 @@ import {
   requireAdmin,
   successLimiter,
 } from './auth.js';
+import { adminAddress, mailReady, sendAll } from './mailer.js';
+import { adminNewRequest, guestDecision, guestReceived } from './emails.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const publicDir = path.join(__dirname, '..', 'public');
@@ -179,6 +181,18 @@ app.post(
     }
 
     await reservationCreateLimiter.record(req);
+
+    /*
+     * Čaká sa tu zámerne. Po odoslaní odpovede môže serverless funkcia
+     * kedykoľvek skončiť, takže rozposielanie na pozadí by sa nemuselo stihnúť.
+     * Ak e-mail zlyhá, rezervácia je aj tak uložená a človek vidí svoj lístok.
+     */
+    const forMail = { ...clean, ref: created.ref, backupDate: clean.backupDate };
+    await sendAll([
+      adminAddress() && { to: adminAddress(), ...adminNewRequest(forMail, settings) },
+      { to: clean.email, toName: clean.name, ...guestReceived(forMail, settings) },
+    ]);
+
     res.status(201).json({
       ref: created.ref,
       date: clean.date,
@@ -338,7 +352,35 @@ app.patch(
       }
       throw err;
     }
-    res.json({ reservation: await db.get('SELECT * FROM reservations WHERE id = ?', [id]) });
+
+    const updated = await db.get('SELECT * FROM reservations WHERE id = ?', [id]);
+
+    /*
+     * Rozhodnutie sa posiela len pri skutočnej zmene stavu. Bez tejto podmienky
+     * by človeku prišiel e-mail aj vtedy, keď si k žiadosti dopíšeš poznámku.
+     */
+    if (status && status !== existing.status && (status === 'approved' || status === 'rejected')) {
+      const settings = await getSettings();
+      await sendAll([
+        {
+          to: updated.email,
+          toName: updated.name,
+          ...guestDecision(
+            {
+              ref: updated.ref,
+              date: updated.date,
+              backupDate: updated.backup_date,
+              name: updated.name,
+              adminNote: status === 'rejected' ? updated.admin_note : null,
+            },
+            settings,
+            status
+          ),
+        },
+      ]);
+    }
+
+    res.json({ reservation: updated });
   })
 );
 

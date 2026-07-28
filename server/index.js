@@ -4,6 +4,7 @@ import { envLoaded } from './env.js';
 import { app, mountStatic, mountErrors } from './app.js';
 import { describe } from './db.js';
 import { authStartupNotes } from './auth.js';
+import { mailStartupNotes } from './mailer.js';
 
 // Lokálne obsluhuje statiku Express; na Verceli to robí CDN.
 mountStatic();
@@ -15,5 +16,5 @@ app.listen(port, () => {
   console.log(`Správca rezervácií      — http://localhost:${port}/spravca`);
   console.log(`Databáza                — ${describe()}`);
   if (envLoaded) console.log(`  načítané z .env: ${envLoaded} premenných`);
-  for (const note of authStartupNotes()) console.log(`  ! ${note}`);
+  for (const note of [...authStartupNotes(), ...mailStartupNotes()]) console.log(`  ! ${note}`);
 });
