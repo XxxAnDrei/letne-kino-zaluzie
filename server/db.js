@@ -94,7 +94,7 @@ const DEFAULT_SETTINGS = {
   return_time: '10:00',
   paused: '0',
 
-  // Úvodná fáza: prednosť majú Zálužania. Správca to vie prepnúť globálne
+  // Úvodná fáza: prednosť majú Ulačania. Správca to vie prepnúť globálne
   // alebo pre konkrétny deň cez slot_rules.
   default_scope: 'zaluzie',
   home_municipality: 'Veľké Zálužie',

@@ -790,7 +790,7 @@ app.patch(
     }
 
     if (Object.hasOwn(patch, 'home_municipality') && String(patch.home_municipality).trim().length < 2) {
-      // Prázdna obec by zamkla všetky termíny vyhradené domácim.
+      // Prázdna obec by zamkla všetky termíny vyhradené Ulačanom.
       res.status(400).json({ error: 'Domácu obec nechaj vyplnenú.' });
       return;
     }

@@ -111,8 +111,8 @@ export async function validateReservation(body) {
     scope === 'zaluzie' &&
     !sameMunicipality(municipality, settings.homeMunicipality)
   ) {
-    // Úvodná fáza: takto označený termín je vyhradený domácim.
-    errors.municipality = `Tento termín je počas úvodnej fázy vyhradený pre obyvateľov obce ${settings.homeMunicipality}. Skús prosím termín označený ako otvorený pre okolité obce.`;
+    // Úvodná fáza: takto označený termín je vyhradený Ulačanom.
+    errors.municipality = `Tento termín je počas úvodnej fázy vyhradený pre Ulačanov, teda obyvateľov obce ${settings.homeMunicipality}. Skús prosím termín označený ako otvorený pre okolité obce.`;
   }
   clean.municipality = municipality;
 

@@ -16,7 +16,7 @@
   var DAYS = ["pondelok", "utorok", "streda", "štvrtok", "piatok", "sobota", "nedeľa"];
 
   var SCOPE_LABEL = {
-    zaluzie: "voľné pre Veľké Zálužie",
+    zaluzie: "voľné pre Ulačanov",
     all: "voľné aj pre okolité obce",
     approval: "voľné po dohode",
   };
