@@ -7,8 +7,8 @@ import { encode as encodeBySquare, PaymentOptions, CurrencyCode } from 'bysquare
 
 import { db, getSettings, setSettings, init, SETTING_KEYS, SCOPES } from './db.js';
 import { addDays, daysBetween, isIsoDate, today } from './dates.js';
-import { buildAvailability } from './availability.js';
-import { validateReservation } from './validate.js';
+import { buildAvailability, dateStatus } from './availability.js';
+import { normalisePhone, validateReservation } from './validate.js';
 import {
   checkPassword,
   clearSession,
@@ -101,13 +101,18 @@ app.get(
 const reservationBurstLimiter = rateLimiter({
   bucket: 'res-burst',
   windowMs: 10 * 60 * 1000,
-  max: 30,
+  max: Number(process.env.RES_BURST_MAX || 30),
   message: 'Priveľa požiadaviek. Skús to prosím o chvíľu.',
 });
+/*
+ * Za jednou obecnou IP adresou býva viac domácností, takže limit musí ísť
+ * zdvihnúť bez zásahu do kódu. Predvolených päť za hodinu je pre dedinu dosť,
+ * ale keby sa ozvali, že im to zamyká susedov, stačí zmeniť premennú.
+ */
 const reservationCreateLimiter = successLimiter({
   bucket: 'res-create',
   windowMs: 60 * 60 * 1000,
-  max: 5,
+  max: Number(process.env.RES_LIMIT_MAX || 5),
   message: 'Z tejto siete prišlo priveľa žiadostí. Ozvi sa mi prosím telefonicky.',
 });
 
@@ -256,7 +261,7 @@ app.get(
 const loginLimiter = rateLimiter({
   bucket: 'login',
   windowMs: 15 * 60 * 1000,
-  max: 8,
+  max: Number(process.env.LOGIN_MAX || 8),
   message: 'Priveľa pokusov o prihlásenie. Skús to o 15 minút.',
 });
 
@@ -473,6 +478,25 @@ app.post(
       return;
     }
 
+    /*
+     * Cieľový deň musí byť naozaj použiteľný. Bez tejto kontroly sa dalo
+     * presunúť na ručne zablokovaný deň alebo do minulosti a kalendár potom
+     * tvrdil dve veci naraz.
+     */
+    const cielStav = await dateStatus(target);
+    if (!['free', 'taken'].includes(cielStav.status)) {
+      const preco = {
+        blocked: 'je ručne zablokovaný',
+        past: 'je v minulosti alebo príliš blízko',
+        offseason: 'je mimo sezóny',
+        far: 'je za horizontom rezervácií',
+        paused: 'spadá do pozastaveného príjmu',
+        invalid: 'nie je platný dátum',
+      };
+      res.status(400).json({ error: `Termín ${target} ${preco[cielStav.status] || 'nie je dostupný'}.` });
+      return;
+    }
+
     await db.run(
       `UPDATE reservations
           SET moved_from = COALESCE(moved_from, date), date = ?, backup_date = NULL, updated_at = ?
@@ -659,11 +683,17 @@ app.post(
   '/api/admin/blocklist',
   requireAdmin,
   route(async (req, res) => {
-    const value = typeof req.body?.value === 'string' ? req.body.value.trim().toLowerCase() : '';
-    if (value.length < 5) {
+    const zadane = typeof req.body?.value === 'string' ? req.body.value.trim().toLowerCase() : '';
+    if (zadane.length < 5) {
       res.status(400).json({ error: 'Zadaj telefón alebo e-mail.' });
       return;
     }
+    /*
+     * Telefón sa ukladá v rovnakom tvare, v akom sa ukladá pri žiadosti.
+     * Inak by zápis „0905 111 222" nikdy nesadol na uložené „+421905111222"
+     * a blokovanie telefónov by ticho nefungovalo.
+     */
+    const value = zadane.includes('@') ? zadane : normalisePhone(zadane) || zadane;
     const reason = typeof req.body?.reason === 'string' ? req.body.reason.slice(0, 200) : null;
     await db.run(
       'INSERT INTO blocklist (value, reason, created_at) VALUES (?, ?, ?) ON CONFLICT (value) DO UPDATE SET reason = excluded.reason',
@@ -717,6 +747,58 @@ app.patch(
       res.status(400).json({ error: 'Neznáme predvolené určenie termínov.' });
       return;
     }
+
+    /*
+     * Číselné a časové nastavenia treba overiť, inak sa uloží čokoľvek.
+     * Z „abc" vznikne pri čítaní NaN, z NaN vznikne neplatný dátum a celý
+     * kalendár sa rozsype na NaN-NaN-NaN. Zo správcovského preklepu by sa
+     * tak stal výpadok verejnej stránky.
+     */
+    const cisla = [
+      ['lead_days', 0, 60, 'Lehota vopred musí byť číslo od 0 do 60 dní.'],
+      ['horizon_days', 1, 730, 'Horizont musí byť číslo od 1 do 730 dní.'],
+    ];
+    for (const [key, min, max, sprava] of cisla) {
+      if (!Object.hasOwn(patch, key)) continue;
+      const n = Number(String(patch[key]).trim());
+      if (!Number.isInteger(n) || n < min || n > max) {
+        res.status(400).json({ error: sprava });
+        return;
+      }
+      patch[key] = String(n);
+    }
+
+    for (const key of ['pickup_time', 'return_time']) {
+      if (!Object.hasOwn(patch, key)) continue;
+      if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(String(patch[key]).trim())) {
+        res.status(400).json({ error: 'Čas zadaj v tvare HH:MM, napríklad 17:00.' });
+        return;
+      }
+      patch[key] = String(patch[key]).trim();
+    }
+
+    for (const [key, sprava] of [
+      ['season_start', 'Začiatok'],
+      ['season_end', 'Koniec'],
+    ]) {
+      if (!Object.hasOwn(patch, key)) continue;
+      const [m, d] = String(patch[key]).split('-').map(Number);
+      if (m < 1 || m > 12 || d < 1 || d > 31) {
+        res.status(400).json({ error: `${sprava} sezóny nie je platný dátum.` });
+        return;
+      }
+    }
+
+    if (Object.hasOwn(patch, 'home_municipality') && String(patch.home_municipality).trim().length < 2) {
+      // Prázdna obec by zamkla všetky termíny vyhradené domácim.
+      res.status(400).json({ error: 'Domácu obec nechaj vyplnenú.' });
+      return;
+    }
+
+    if (Object.hasOwn(patch, 'paused') && !['0', '1'].includes(String(patch.paused))) {
+      res.status(400).json({ error: 'Pozastavenie môže byť len zapnuté alebo vypnuté.' });
+      return;
+    }
     if (patch.oz_iban && !/^SK\d{22}$/.test(String(patch.oz_iban).replace(/\s+/g, ''))) {
       res.status(400).json({ error: 'IBAN musí byť slovenský, v tvare SK a 22 číslic.' });
       return;
@@ -749,7 +831,17 @@ app.get(
   requireAdmin,
   route(async (req, res) => {
     const rows = await db.all('SELECT * FROM reservations ORDER BY date ASC');
-    const escape = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    /*
+     * Bunka, ktorá začína na = + - alebo @, je pre Excel vzorec, nie text.
+     * Meno „=cmd|…" by sa pri otvorení exportu pokúsilo niečo vykonať, a údaje
+     * v ňom píše ktokoľvek z formulára. Apostrof pred takou bunkou z nej robí
+     * text; ostatné bunky zostávajú nedotknuté.
+     */
+    const escape = (v) => {
+      const s = String(v ?? '');
+      const bezpecne = /^[=+\-@\t\r]/.test(s) ? `'${s}` : s;
+      return `"${bezpecne.replace(/"/g, '""')}"`;
+    };
     const csv = [
       CSV_COLUMNS.map(([, label]) => escape(label)).join(';'),
       ...rows.map((row) => CSV_COLUMNS.map(([key]) => escape(row[key])).join(';')),

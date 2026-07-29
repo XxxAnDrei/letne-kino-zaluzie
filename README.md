@@ -293,3 +293,24 @@ by nechránilo pred ničím.
 Animácie bežia na GSAP + ScrollTrigger a sú celé v `motion.js`. Rezervácia je od
 nich oddelená: keby sa GSAP nenačítal, kalendár aj formulár fungujú ďalej.
 Pri zapnutom `prefers-reduced-motion` sa pohyb vypne a obsah zostane statický.
+
+## Audit rezervácií
+
+`scripts/audit.mjs` prejde 87 kontrol proti bežiacemu serveru: stavy kalendára,
+validáciu každého poľa, súbeh piatich žiadostí na jeden termín, prístup do
+panela, správu žiadostí, blokovanie, nastavenia, export a obmedzenie počtu.
+
+```bash
+npm start                 # v druhom okne
+node scripts/audit.mjs
+```
+
+Limity sa dajú na čas auditu zdvihnúť, inak si ich skript sám vyčerpá a zvyšok
+kontrol potom padá na 429:
+
+```bash
+RES_LIMIT_MAX=500 RES_BURST_MAX=500 LOGIN_MAX=500 npm start
+```
+
+Tie isté premenné slúžia aj v prevádzke, keby za jednou obecnou IP adresou bolo
+priveľa domácností a limit im zamykal susedov.

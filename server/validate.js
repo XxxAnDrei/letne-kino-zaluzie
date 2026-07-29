@@ -1,5 +1,5 @@
 import { db, getSettings } from './db.js';
-import { addDays, isIsoDate, today } from './dates.js';
+import { addDays, inSeason, isIsoDate, today } from './dates.js';
 import { dateStatus } from './availability.js';
 
 const STATUS_MESSAGES = {
@@ -59,6 +59,11 @@ export async function validateReservation(body) {
   if (status !== 'free') errors.date = STATUS_MESSAGES[status] || STATUS_MESSAGES.invalid;
   clean.date = date;
 
+  /*
+   * Náhradný termín sa eviduje, ale neblokuje — inak by jedna rodina obsadila
+   * dva večery. Musí však dávať zmysel: dátum o päť rokov alebo uprostred zimy
+   * by sa ticho uložil a vyplával by až pri daždi, keď je naň neskoro.
+   */
   const backupDate = text(body.backupDate);
   if (backupDate) {
     if (!isIsoDate(backupDate)) {
@@ -67,6 +72,10 @@ export async function validateReservation(body) {
       errors.backupDate = 'Náhradný termín musí byť iný ako hlavný.';
     } else if (backupDate < addDays(today(), settings.leadDays)) {
       errors.backupDate = 'Náhradný termín je príliš blízko.';
+    } else if (backupDate > addDays(today(), settings.horizonDays)) {
+      errors.backupDate = 'Náhradný termín je zatiaľ priďaleko.';
+    } else if (!inSeason(backupDate, settings.seasonStart, settings.seasonEnd)) {
+      errors.backupDate = 'Náhradný termín je mimo sezóny letného kina.';
     }
   }
   clean.backupDate = backupDate || null;
