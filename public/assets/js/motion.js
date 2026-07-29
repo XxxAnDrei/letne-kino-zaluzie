@@ -61,23 +61,25 @@
   gsap.registerPlugin(ScrollTrigger);
 
   /*
-   * Na telefóne sa nepripína nič.
+   * Pripínanie beží aj na telefóne — časová os aj vodorovná cievka sú kvôli
+   * nemu. Skákanie stránky spôsoboval prepočet, nie pripínanie samo:
    *
-   * Pripnutá sekcia si pod seba vloží rozperu vysokú niekoľko obrazoviek a jej
-   * výška sa prepočítava z window.innerHeight. Lenže na mobile sa innerHeight
-   * mení pri každom skrolovaní, ako sa schováva adresný riadok. Po prepočte
-   * teda skočí výška dokumentu a s ňou aj pozícia — a kto bol v spodnej časti
-   * stránky, ocitol sa na jej konci.
+   *   1. na mobile sa innerHeight mení pri každom skrolovaní, ako sa schováva
+   *      adresný riadok, a každá taká zmena vyvolá resize;
+   *   2. po prepočte sa prepočítala aj výška rozpery pod pripnutou sekciou;
+   *   3. výška dokumentu skočila a s ňou pozícia — kto bol dole, ocitol sa
+   *      na konci stránky.
    *
-   * Namiesto pripínania beží na telefóne obyčajný scrub cez samotnú sekciu
-   * a vodorovná cievka sa posúva prstom. Stránka je tým aj o štyri obrazovky
-   * kratšia.
+   * Rieši sa to na všetkých troch miestach: ignoreMobileResize povie GSAP-u,
+   * aby zmenu od adresného riadku nepovažoval za skutočný resize; vlastný
+   * prepočet nižšie sa spúšťa len pri zmene šírky; a dĺžky pripnutých sekcií
+   * sa počítajú z výšky zapamätanej pri načítaní, nie z aktuálnej.
    */
-  var noPin = window.matchMedia("(max-width: 860px)").matches;
-  if (noPin) document.documentElement.classList.add("no-pin");
-
-  // Zmenu výšky okna spôsobenú adresným riadkom má ScrollTrigger ignorovať.
   ScrollTrigger.config({ ignoreMobileResize: true });
+
+  // Zapamätaná výška okna. Adresný riadok ju počas skrolovania mení, takže
+  // čítať ju pri každom prepočte by rozhýbalo celú stránku pod prstom.
+  var stabilnaVyska = window.innerHeight;
   var canSplit = typeof window.SplitText !== "undefined";
   if (canSplit) gsap.registerPlugin(SplitText);
   var canDraw = typeof window.DrawSVGPlugin !== "undefined";
@@ -297,9 +299,11 @@
     var tl = gsap.timeline({
       scrollTrigger: {
         trigger: section,
-        start: noPin ? "top 80%" : "top top",
-        end: noPin ? "bottom 20%" : "+=300%",
-        pin: !noPin,
+        start: "top top",
+        // Pevná dĺžka v pixeloch namiesto „+=300%". Percentá sa počítajú
+        // z výšky okna a tá sa na mobile mení pri každom skrolovaní.
+        end: "+=" + stabilnaVyska * 3,
+        pin: true,
         scrub: 0.7,
         anticipatePin: 1,
         onUpdate: function (self) {
@@ -385,9 +389,6 @@
     var track = $("reelTrack");
     if (!section || !track) return;
 
-    // Na telefóne sa cievka posúva prstom, o zvyšok sa stará CSS.
-    if (noPin) return;
-
     var getShift = function () {
       return Math.max(0, track.scrollWidth - window.innerWidth);
     };
@@ -398,7 +399,8 @@
       scrollTrigger: {
         trigger: section,
         start: "top top",
-        end: function () { return "+=" + (getShift() + window.innerHeight * 0.5); },
+        // Aj tu vstupuje zapamätaná výška, nie aktuálna.
+        end: function () { return "+=" + (getShift() + stabilnaVyska * 0.5); },
         pin: true,
         scrub: 0.8,
         anticipatePin: 1,
