@@ -6,7 +6,7 @@ import QRCode from 'qrcode';
 import { encode as encodeBySquare, PaymentOptions, CurrencyCode } from 'bysquare/pay';
 
 import { db, getSettings, setSettings, init, SETTING_KEYS, SCOPES } from './db.js';
-import { addDays, isIsoDate, today } from './dates.js';
+import { addDays, daysBetween, isIsoDate, today } from './dates.js';
 import { buildAvailability } from './availability.js';
 import { validateReservation } from './validate.js';
 import {
@@ -528,26 +528,63 @@ app.get(
 app.post(
   '/api/admin/blackouts',
   requireAdmin,
+  /*
+   * Blokuje sa rozsah dní. Dovolenka ani servis netrvajú jeden večer a klikať
+   * dva týždne po jednom bolo zbytočné trápenie. Bez koncového dátumu ide
+   * o jediný deň, takže staršie volania fungujú ďalej.
+   */
   route(async (req, res) => {
-    const date = req.body?.date;
-    if (!isIsoDate(date)) {
+    const from = req.body?.date;
+    const to = req.body?.dateTo || from;
+    if (!isIsoDate(from) || !isIsoDate(to)) {
       res.status(400).json({ error: 'Neplatný dátum.' });
       return;
     }
-    const active = await db.get(
-      "SELECT ref FROM reservations WHERE date = ? AND status IN ('pending','approved')",
-      [date]
-    );
-    if (active) {
-      res.status(409).json({ error: `Na ${date} je aktívna rezervácia ${active.ref}.` });
+    if (to < from) {
+      res.status(400).json({ error: 'Koniec rozsahu je pred jeho začiatkom.' });
       return;
     }
-    const reason = typeof req.body?.reason === 'string' ? req.body.reason.slice(0, 200) : null;
-    await db.run(
-      'INSERT INTO blackouts (date, reason, created_at) VALUES (?, ?, ?) ON CONFLICT (date) DO UPDATE SET reason = excluded.reason',
-      [date, reason, new Date().toISOString()]
+    const dlzka = daysBetween(from, to) + 1;
+    if (dlzka > 120) {
+      res.status(400).json({ error: 'Naraz sa dá zablokovať najviac 120 dní.' });
+      return;
+    }
+
+    const dni = [];
+    for (let i = 0; i < dlzka; i += 1) dni.push(addDays(from, i));
+
+    /*
+     * Celý rozsah sa overí naraz. Zablokovať polovicu a na strede skončiť
+     * chybou by nechalo kalendár v stave, ktorý správca nečakal.
+     */
+    const obsadene = await db.all(
+      `SELECT date, ref FROM reservations
+        WHERE date >= ? AND date <= ? AND status IN ('pending','approved')
+        ORDER BY date ASC`,
+      [from, to]
     );
-    res.status(201).json({ ok: true });
+    if (obsadene.length) {
+      const zoznam = obsadene.map((r) => `${r.date} (${r.ref})`).join(', ');
+      res.status(409).json({
+        error:
+          obsadene.length === 1
+            ? `Na ${zoznam} je aktívna rezervácia.`
+            : `V rozsahu sú aktívne rezervácie: ${zoznam}.`,
+      });
+      return;
+    }
+
+    const reason = typeof req.body?.reason === 'string' ? req.body.reason.slice(0, 200) : null;
+    const now = new Date().toISOString();
+    await db.tx(async (tx) => {
+      for (const den of dni) {
+        await tx.run(
+          'INSERT INTO blackouts (date, reason, created_at) VALUES (?, ?, ?) ON CONFLICT (date) DO UPDATE SET reason = excluded.reason',
+          [den, reason, now]
+        );
+      }
+    });
+    res.status(201).json({ ok: true, pocet: dni.length });
   })
 );
 

@@ -152,13 +152,13 @@
 
   /* ------------------------------------------------------------ zoznam */
 
+  /*
+   * Pri štarte sa ťahá len zoznam žiadostí. Zvyšok žije v okne nastavení
+   * a načíta sa až pri jeho otvorení — panel sa tak otvorí na jeden dopyt
+   * namiesto piatich.
+   */
   function loadAll() {
     loadReservations();
-    loadBlackouts();
-    loadSlotRules();
-    loadBlocklist();
-    loadSettings();
-    loadMailState();
   }
 
   /* ------------------------------------------------------------- e-maily */
@@ -522,18 +522,40 @@
 
   $("boAdd").addEventListener("click", function () {
     var date = $("boDate").value;
-    if (!date) return toast("Vyber dátum.", true);
+    var dateTo = $("boDateTo").value;
+    if (!date) return toast("Vyber dátum od.", true);
+    if (dateTo && dateTo < date) return toast("Dátum do je skôr než dátum od.", true);
     api("/api/admin/blackouts", {
       method: "POST",
-      body: JSON.stringify({ date: date, reason: $("boReason").value }),
+      body: JSON.stringify({ date: date, dateTo: dateTo || date, reason: $("boReason").value }),
     })
-      .then(function () {
+      .then(function (r) {
         $("boDate").value = "";
+        $("boDateTo").value = "";
         $("boReason").value = "";
-        toast("Termín zablokovaný.");
+        toast(r.pocet > 1 ? "Zablokovaných " + r.pocet + " dní." : "Termín zablokovaný.");
         loadBlackouts();
       })
       .catch(function (e) { if (e.message !== "odhlásené") toast(e.message, true); });
+  });
+
+  /* ------------------------------------------------------------- nastavenia */
+
+  var dlg = $("settingsDlg");
+  $("settingsOpen").addEventListener("click", function () {
+    // Údaje sa načítajú až pri otvorení, nech štart panela nezdržujú.
+    loadBlackouts();
+    loadSlotRules();
+    loadBlocklist();
+    loadSettings();
+    loadMailState();
+    if (dlg.showModal) dlg.showModal();
+    else dlg.setAttribute("open", "");
+  });
+  $("settingsClose").addEventListener("click", function () { dlg.close(); });
+  // Kliknutie mimo obsahu zavrie okno; dialog sám vracia kliky na podklad.
+  dlg.addEventListener("click", function (e) {
+    if (e.target === dlg) dlg.close();
   });
 
   $("boList").addEventListener("click", function (event) {

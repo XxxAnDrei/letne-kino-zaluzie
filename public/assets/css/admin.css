@@ -6,6 +6,11 @@
 body.admin {
   background: var(--night-950);
   min-height: 100svh;
+  /*
+   * Bez tohto si prehliadač vykreslí natívne prvky v svetlej schéme: polia
+   * na dátum svietili bielym pozadím a ikonka kalendára bola takmer neviditeľná.
+   */
+  color-scheme: dark;
 }
 
 .admin__bar {
@@ -362,4 +367,75 @@ body.admin {
 }
 .toast.is-bad {
   background: var(--ember);
+}
+
+/* ------------------------------------------------------- okno s nastaveniami */
+
+/*
+ * Nastavenia boli v bočnom stĺpci širokom 320 px. Formuláre sa v ňom lámali
+ * do jedného stĺpca a zoznam žiadostí, kvôli ktorému sa panel otvára, prišiel
+ * o tretinu šírky. Teraz sú v samostatnom okne, kde majú celú obrazovku.
+ */
+.settings {
+  width: min(1400px, calc(100vw - 3rem));
+  max-height: calc(100vh - 3rem);
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--night-900);
+  color: var(--ivory);
+  overflow: hidden;
+}
+.settings::backdrop {
+  background: color-mix(in oklab, var(--night-950) 78%, transparent);
+  backdrop-filter: blur(6px);
+}
+.settings__bar {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.1rem clamp(1rem, 2.5vw, 1.75rem);
+  background: var(--night-900);
+  border-bottom: 1px solid var(--line);
+}
+.settings__bar h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--step-2);
+  font-weight: 400;
+}
+.settings__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  align-items: start;
+  gap: clamp(1rem, 2vw, 1.5rem);
+  padding: clamp(1rem, 2.5vw, 1.75rem);
+  max-height: calc(100vh - 3rem - 4.6rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* Na telefóne je okno cez celú plochu, viac stĺpcov aj tak nemá kam ísť. */
+@media (max-width: 720px) {
+  .settings {
+    width: 100vw;
+    max-width: 100vw;
+    max-height: 100svh;
+    height: 100svh;
+    border: 0;
+    border-radius: 0;
+  }
+  .settings__grid {
+    grid-template-columns: 1fr;
+    max-height: calc(100svh - 4.6rem);
+  }
+}
+
+/* Zoznam žiadostí má odteraz celú šírku. */
+.admin__main {
+  grid-template-columns: minmax(0, 1fr);
 }

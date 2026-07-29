@@ -43,6 +43,7 @@
             <input class="search" type="search" id="search" placeholder="Hľadať meno, telefón, adresu…" />
             <a class="act" href="/api/admin/export.csv">Export CSV</a>
             <a class="act" href="/" target="_blank" rel="noopener">Stránka ↗</a>
+            <button class="act" type="button" id="settingsOpen">Nastavenia</button>
             <button class="act" type="button" id="logout">Odhlásiť</button>
           </div>
         </div>
@@ -54,176 +55,190 @@
           <div id="list"></div>
         </section>
 
-        <aside>
-          <div class="panel">
-            <h2>Zablokovať termín</h2>
-            <p class="form__note">
-              Deň, kedy techniku nepožičiavaš — dovolenka, servis, vlastná akcia. V kalendári
-              sa zobrazí ako nedostupný.
-            </p>
-            <div class="form__row">
-              <div class="field">
-                <label for="boDate">Dátum</label>
-                <input type="date" id="boDate" />
+      </main>
+
+      <!-- Nastavenia sú v samostatnom okne. V bočnom stĺpci zaberali polovicu
+           šírky a zoznam žiadostí, kvôli ktorému sa panel otvára, sa tlačil
+           do zvyšku. Tu je na ne celá šírka obrazovky. -->
+      <dialog class="settings" id="settingsDlg" aria-labelledby="settingsTitle">
+        <div class="settings__bar">
+          <h2 id="settingsTitle">Nastavenia</h2>
+          <button class="act" type="button" id="settingsClose">Zavrieť</button>
+        </div>
+        <div class="settings__grid">
+            <div class="panel">
+              <h2>Zablokovať termíny</h2>
+              <p class="form__note">
+                Dni, kedy techniku nepožičiavaš — dovolenka, servis, vlastná akcia. V kalendári
+                sa zobrazia ako nedostupné. Ak necháš pole „do" prázdne, zablokuje sa jeden deň.
+              </p>
+              <div class="form__row">
+                <div class="field">
+                  <label for="boDate">Od</label>
+                  <input type="date" id="boDate" />
+                </div>
+                <div class="field">
+                  <label for="boDateTo">Do</label>
+                  <input type="date" id="boDateTo" />
+                </div>
               </div>
               <div class="field">
                 <label for="boReason">Dôvod</label>
                 <input type="text" id="boReason" placeholder="nepovinné" />
               </div>
+              <button class="act" type="button" id="boAdd">Zablokovať</button>
+              <ul class="blackouts" id="boList"></ul>
             </div>
-            <button class="act" type="button" id="boAdd">Zablokovať</button>
-            <ul class="blackouts" id="boList"></ul>
-          </div>
 
-          <div class="panel">
-            <h2>Určenie termínu</h2>
-            <p class="form__note">
-              Počas úvodnej fázy majú prednosť Zálužania. Konkrétny deň sa dá otvoriť
-              aj pre okolité obce alebo nechať na individuálne schválenie.
-            </p>
-            <div class="form__row">
+            <div class="panel">
+              <h2>Určenie termínu</h2>
+              <p class="form__note">
+                Počas úvodnej fázy majú prednosť Zálužania. Konkrétny deň sa dá otvoriť
+                aj pre okolité obce alebo nechať na individuálne schválenie.
+              </p>
+              <div class="form__row">
+                <div class="field">
+                  <label for="srDate">Dátum</label>
+                  <input type="date" id="srDate" />
+                </div>
+                <div class="field">
+                  <label for="srScope">Pre koho</label>
+                  <select id="srScope">
+                    <option value="zaluzie">Iba Veľké Zálužie</option>
+                    <option value="all">Aj okolité obce</option>
+                    <option value="approval">Po dohode</option>
+                  </select>
+                </div>
+              </div>
+              <button class="act" type="button" id="srAdd">Nastaviť</button>
+              <ul class="blackouts" id="srList"></ul>
+            </div>
+
+            <div class="panel">
+              <h2>Blokované kontakty</h2>
+              <p class="form__note">
+                Telefón alebo e-mail, z ktorého sa žiadosť neprijme. Dôvod vidíš len ty.
+              </p>
               <div class="field">
-                <label for="srDate">Dátum</label>
-                <input type="date" id="srDate" />
+                <label for="blValue">Telefón alebo e-mail</label>
+                <input type="text" id="blValue" placeholder="+421901234567" />
               </div>
               <div class="field">
-                <label for="srScope">Pre koho</label>
-                <select id="srScope">
+                <label for="blReason">Dôvod</label>
+                <input type="text" id="blReason" placeholder="nepovinné" />
+              </div>
+              <button class="act" type="button" id="blAdd">Zablokovať</button>
+              <ul class="blackouts" id="blList"></ul>
+            </div>
+
+            <div class="panel">
+              <h2>Občianske združenie</h2>
+              <p class="form__note">Tieto údaje idú do QR platby aj do sekcie s príspevkom.</p>
+              <div class="field">
+                <label for="ozName">Názov</label>
+                <input type="text" id="ozName" />
+              </div>
+              <div class="field">
+                <label for="ozIban">IBAN</label>
+                <input type="text" id="ozIban" />
+              </div>
+              <div class="field">
+                <label for="ozNote">Správa pre prijímateľa</label>
+                <input type="text" id="ozNote" />
+              </div>
+              <div class="form__row">
+                <div class="field">
+                  <label for="ozIco">IČO</label>
+                  <input type="text" id="ozIco" />
+                </div>
+                <div class="field">
+                  <label for="ozBank">Banka</label>
+                  <input type="text" id="ozBank" />
+                </div>
+              </div>
+              <div class="field">
+                <label for="ozAddress">Sídlo</label>
+                <input type="text" id="ozAddress" />
+              </div>
+              <div class="field">
+                <label for="ozRegistration">Registrácia</label>
+                <input type="text" id="ozRegistration" />
+              </div>
+              <button class="act" type="button" id="ozSave">Uložiť údaje združenia</button>
+            </div>
+
+            <div class="panel">
+              <h2>Sezóna a časy</h2>
+              <div class="form__row">
+                <div class="field">
+                  <label for="setSeasonStart">Sezóna od (MM-DD)</label>
+                  <input type="text" id="setSeasonStart" placeholder="05-01" />
+                </div>
+                <div class="field">
+                  <label for="setSeasonEnd">Sezóna do (MM-DD)</label>
+                  <input type="text" id="setSeasonEnd" placeholder="09-30" />
+                </div>
+              </div>
+              <div class="form__row">
+                <div class="field">
+                  <label for="setPickup">Prevzatie</label>
+                  <input type="text" id="setPickup" placeholder="17:00" />
+                </div>
+                <div class="field">
+                  <label for="setReturn">Vrátenie</label>
+                  <input type="text" id="setReturn" placeholder="10:00" />
+                </div>
+              </div>
+              <div class="form__row">
+                <div class="field">
+                  <label for="setLead">Lehota vopred (dni)</label>
+                  <input type="number" id="setLead" min="0" max="60" />
+                </div>
+                <div class="field">
+                  <label for="setHorizon">Horizont (dni)</label>
+                  <input type="number" id="setHorizon" min="7" max="400" />
+                </div>
+              </div>
+              <div class="field">
+                <label for="setScope">Predvolené určenie termínov</label>
+                <select id="setScope">
                   <option value="zaluzie">Iba Veľké Zálužie</option>
                   <option value="all">Aj okolité obce</option>
                   <option value="approval">Po dohode</option>
                 </select>
               </div>
+              <div class="field">
+                <label for="setHome">Domáca obec</label>
+                <input type="text" id="setHome" />
+              </div>
+              <label class="check" style="font-size: var(--step--1)">
+                <input type="checkbox" id="setPaused" />
+                <span>Pozastaviť príjem žiadostí<small>Kalendár zostane viditeľný, ale nedá sa nič vybrať.</small></span>
+              </label>
+              <button class="act" type="button" id="setSave">Uložiť nastavenia</button>
             </div>
-            <button class="act" type="button" id="srAdd">Nastaviť</button>
-            <ul class="blackouts" id="srList"></ul>
-          </div>
 
-          <div class="panel">
-            <h2>Blokované kontakty</h2>
-            <p class="form__note">
-              Telefón alebo e-mail, z ktorého sa žiadosť neprijme. Dôvod vidíš len ty.
-            </p>
-            <div class="field">
-              <label for="blValue">Telefón alebo e-mail</label>
-              <input type="text" id="blValue" placeholder="+421901234567" />
+            <div class="panel">
+              <h2>E-maily</h2>
+              <p class="form__note" id="mailState">Zisťujem stav…</p>
+              <button class="act" type="button" id="mailTest">Poslať skúšobný e-mail</button>
             </div>
-            <div class="field">
-              <label for="blReason">Dôvod</label>
-              <input type="text" id="blReason" placeholder="nepovinné" />
-            </div>
-            <button class="act" type="button" id="blAdd">Zablokovať</button>
-            <ul class="blackouts" id="blList"></ul>
-          </div>
 
-          <div class="panel">
-            <h2>Občianske združenie</h2>
-            <p class="form__note">Tieto údaje idú do QR platby aj do sekcie s príspevkom.</p>
-            <div class="field">
-              <label for="ozName">Názov</label>
-              <input type="text" id="ozName" />
+            <div class="panel">
+              <h2>Ako to funguje</h2>
+              <p class="form__note">
+                Žiadosť príde ako <b>čaká</b> a termín je hneď blokovaný, aby ho nedostal nikto
+                druhý. Keď overíš adresu, dáš <b>potvrdiť</b>. Ak <b>zamietneš</b> alebo
+                <b>zrušíš</b>, termín sa automaticky vráti späť do kalendára ako voľný.
+              </p>
+              <p class="form__note">
+                <b>Presunúť</b> preloží rezerváciu na náhradný termín pri zlom počasí —
+                pôvodný deň sa tým uvoľní. <b>Prevzatie</b> a <b>vrátenie</b> zapíšu
+                odovzdávací zoznam s časom a stavom vybavenia.
+              </p>
             </div>
-            <div class="field">
-              <label for="ozIban">IBAN</label>
-              <input type="text" id="ozIban" />
-            </div>
-            <div class="field">
-              <label for="ozNote">Správa pre prijímateľa</label>
-              <input type="text" id="ozNote" />
-            </div>
-            <div class="form__row">
-              <div class="field">
-                <label for="ozIco">IČO</label>
-                <input type="text" id="ozIco" />
-              </div>
-              <div class="field">
-                <label for="ozBank">Banka</label>
-                <input type="text" id="ozBank" />
-              </div>
-            </div>
-            <div class="field">
-              <label for="ozAddress">Sídlo</label>
-              <input type="text" id="ozAddress" />
-            </div>
-            <div class="field">
-              <label for="ozRegistration">Registrácia</label>
-              <input type="text" id="ozRegistration" />
-            </div>
-            <button class="act" type="button" id="ozSave">Uložiť údaje združenia</button>
-          </div>
-
-          <div class="panel">
-            <h2>Nastavenia</h2>
-            <div class="form__row">
-              <div class="field">
-                <label for="setSeasonStart">Sezóna od (MM-DD)</label>
-                <input type="text" id="setSeasonStart" placeholder="05-01" />
-              </div>
-              <div class="field">
-                <label for="setSeasonEnd">Sezóna do (MM-DD)</label>
-                <input type="text" id="setSeasonEnd" placeholder="09-30" />
-              </div>
-            </div>
-            <div class="form__row">
-              <div class="field">
-                <label for="setPickup">Prevzatie</label>
-                <input type="text" id="setPickup" placeholder="17:00" />
-              </div>
-              <div class="field">
-                <label for="setReturn">Vrátenie</label>
-                <input type="text" id="setReturn" placeholder="10:00" />
-              </div>
-            </div>
-            <div class="form__row">
-              <div class="field">
-                <label for="setLead">Lehota vopred (dni)</label>
-                <input type="number" id="setLead" min="0" max="60" />
-              </div>
-              <div class="field">
-                <label for="setHorizon">Horizont (dni)</label>
-                <input type="number" id="setHorizon" min="7" max="400" />
-              </div>
-            </div>
-            <div class="field">
-              <label for="setScope">Predvolené určenie termínov</label>
-              <select id="setScope">
-                <option value="zaluzie">Iba Veľké Zálužie</option>
-                <option value="all">Aj okolité obce</option>
-                <option value="approval">Po dohode</option>
-              </select>
-            </div>
-            <div class="field">
-              <label for="setHome">Domáca obec</label>
-              <input type="text" id="setHome" />
-            </div>
-            <label class="check" style="font-size: var(--step--1)">
-              <input type="checkbox" id="setPaused" />
-              <span>Pozastaviť príjem žiadostí<small>Kalendár zostane viditeľný, ale nedá sa nič vybrať.</small></span>
-            </label>
-            <button class="act" type="button" id="setSave">Uložiť nastavenia</button>
-          </div>
-
-          <div class="panel">
-            <h2>E-maily</h2>
-            <p class="form__note" id="mailState">Zisťujem stav…</p>
-            <button class="act" type="button" id="mailTest">Poslať skúšobný e-mail</button>
-          </div>
-
-          <div class="panel">
-            <h2>Ako to funguje</h2>
-            <p class="form__note">
-              Žiadosť príde ako <b>čaká</b> a termín je hneď blokovaný, aby ho nedostal nikto
-              druhý. Keď overíš adresu, dáš <b>potvrdiť</b>. Ak <b>zamietneš</b> alebo
-              <b>zrušíš</b>, termín sa automaticky vráti späť do kalendára ako voľný.
-            </p>
-            <p class="form__note">
-              <b>Presunúť</b> preloží rezerváciu na náhradný termín pri zlom počasí —
-              pôvodný deň sa tým uvoľní. <b>Prevzatie</b> a <b>vrátenie</b> zapíšu
-              odovzdávací zoznam s časom a stavom vybavenia.
-            </p>
-          </div>
-        </aside>
-      </main>
+        </div>
+      </dialog>
     </div>
 
     <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
