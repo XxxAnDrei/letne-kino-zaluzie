@@ -866,6 +866,27 @@
                 Kandidát na poslanca Zastupiteľstva Nitrianskeho samosprávneho kraja
               </p>
             </div>
+
+            <!-- Fotka je pod ohybom, preto lazy. Rozmery drží aspect-ratio
+                 v štýle, takže sa pri dočítaní nič nepreskladá. -->
+            <figure class="initiator__photo reveal">
+              <picture>
+                <source
+                  type="image/webp"
+                  srcset="/media/andrej-praznovsky-640.webp 640w,
+                          /media/andrej-praznovsky-1000.webp 1000w"
+                  sizes="(min-width: 901px) 32vw, min(22rem, 86vw)"
+                />
+                <img
+                  src="/media/andrej-praznovsky.jpg"
+                  width="1000"
+                  height="1250"
+                  alt="Andrej Práznovský"
+                  loading="lazy"
+                  decoding="async"
+                />
+              </picture>
+            </figure>
             <div class="initiator__text">
               <p class="lede reveal">
                 Myšlienka projektu vznikla na základe skúseností s komunitným
@@ -893,15 +914,38 @@
             <h2 class="h-section reveal">Dedinský <i>asistent</i></h2>
             <div class="cols__body">
               <p class="lede reveal">
-                Letné kino nie je jediná vec, ktorú môžu Ulačania využiť. Súbežne
-                beží samostatný projekt <b>Dedinský asistent</b> — má vlastnú
-                stránku aj vlastnú registráciu.
+                V našich facebookových skupinách sa roky opakovali tie isté
+                otázky. Hľadám krajčírku. Hľadám opatrovanie. Hľadám brigádnika.
+                Hľadám účtovníka. Pritom veľa šikovných ľudí máme priamo tu,
+                vo Veľkom Záluží.
               </p>
               <p class="reveal">
-                So zapožičaním techniky priamo nesúvisí, takže na tvoju rezerváciu
-                nemá žiadny vplyv. Čo presne ponúka, nájdeš na jeho stránke;
-                registrácia prebieha priamo tam.
+                Preto vznikol <b>Dedinský asistent</b> — miesto, kde sa dá
+                jednoducho nájsť alebo ponúknuť službu, brigádu, výrobok či
+                obyčajnú susedskú pomoc v rámci obce.
               </p>
+
+              <ul class="roles reveal">
+                <li>
+                  <b>Fyzická osoba</b>
+                  <p>Príležitostná pomoc, domáce výrobky, susedská výpomoc.</p>
+                </li>
+                <li>
+                  <b>Brigádnik</b>
+                  <p>Chcem si privyrobiť alebo pomáhať v obci.</p>
+                </li>
+                <li>
+                  <b>Podnikateľ alebo firma</b>
+                  <p>Poskytujem služby alebo produkty pravidelne.</p>
+                </li>
+              </ul>
+
+              <p class="reveal">
+                Registrácia prvých profilov je spustená, vyhľadávanie s pomocou
+                umelej inteligencie pribudne čoskoro. Čím viac ľudí sa pridá, tým
+                lepšie bude vidieť, koľko šikovných rúk v obci máme.
+              </p>
+
               <div class="btn-row reveal">
                 <a class="btn" href="https://dedinskyasistent.sk/registracia/"
                    target="_blank" rel="noopener">
@@ -916,6 +960,13 @@
                   dedinskyasistent.sk
                 </a>
               </div>
+
+              <p class="form__note reveal">
+                Služba je aktuálne dostupná bezplatne. V budúcnosti môžu byť
+                niektoré funkcie alebo zvýhodnené možnosti prezentácie spoplatnené.
+                So zapožičaním premietacej techniky Dedinský asistent nesúvisí —
+                na tvoju rezerváciu nemá žiadny vplyv.
+              </p>
             </div>
           </div>
         </div>
