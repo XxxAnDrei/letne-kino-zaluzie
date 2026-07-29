@@ -100,6 +100,22 @@ odosielateľa musí byť v Breve overená, inak ju Brevo odmietne.
 odpovie chybou, žiadosť sa aj tak uloží a človek uvidí svoj lístok; dôvod sa
 zapíše do logu. Na Verceli ho nájdeš v *Deployments → Runtime Logs*.
 
+V paneli je sekcia **E-maily**: ukáže, ktorá premenná chýba alebo z akej adresy
+sa posiela, a tlačidlom odošle skúšobnú správu. Vráti presné znenie odpovede
+od Brevo, nie len kód chyby.
+
+### Povolené IP adresy v Breve
+
+Brevo má v *Settings → Security → Authorised IPs* prepínač, ktorý pustí API
+volania len z uvedených adries. Ak je pre API kľúče zapnutý, **odosielanie
+z Vercelu nebude fungovať**: funkcie bežia na AWS a IP adresu dostávajú
+zakaždým inú, takže žiadna nebude na zozname. Prejaví sa to ako `401` a v logu
+Brevo nie je nič, lebo požiadavka je odmietnutá skôr, než správa vznikne.
+
+Dopĺňať adresy do zoznamu nemá zmysel, pribúdajú prakticky denne. Riešením je
+**Deactivate for API keys**. Ochranu potom nesie samotný kľúč, ktorý je len
+v premenných hostingu a označený ako citlivý.
+
 Znenie správ je v `server/emails.js`, oddelené od odosielania, takže sa dá
 prepísať bez zasahovania do volania API.
 
