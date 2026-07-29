@@ -87,8 +87,12 @@
 
   /* ================================================== 1. PREDOHRA */
 
-  var seenLeader = false;
-  try { seenLeader = sessionStorage.getItem("vz-kino-leader") === "1"; } catch (e) {}
+  /*
+   * Odpočet beží pri každom načítaní. Kedysi si v sessionStorage pamätal,
+   * že už bežal, a pri obnovení stránky sa preskočil — človek videl len
+   * zamrznutú trojku, kým sa stiahli skripty, a potom nič. Predohra je časť
+   * tváre stránky, nie obťažovanie; nech ju vidno vždy.
+   */
 
   function heroIntro() {
     var tl = gsap.timeline({ defaults: { ease: "power4.out" } });
@@ -125,12 +129,7 @@
     document.body.classList.add("is-locked");
     var num = $("leaderNum");
     var sweep = document.querySelector(".leader__ring .sweep");
-    var tl = gsap.timeline({
-      onComplete: function () {
-        dropLeader();
-        try { sessionStorage.setItem("vz-kino-leader", "1"); } catch (e) {}
-      },
-    });
+    var tl = gsap.timeline({ onComplete: dropLeader });
 
     [3, 2, 1].forEach(function (n, i) {
       tl.call(function () { num.textContent = String(n); }, null, i * 0.5)
@@ -166,14 +165,13 @@
     return tl;
   }
 
-  if (noIntro) {
-    dropLeader(); // text je viditeľný z CSS, netreba ho nič odhaľovať
-  } else if (seenLeader) {
-    dropLeader();
-    heroIntro();
-  } else {
-    playLeader();
-  }
+  /*
+   * Odpočet beží aj na telefóne. `noIntro` už neznamená „bez predohry", ale
+   * „úvodný text sa neschováva" — ten je viditeľný z CSS, aby nečakal na
+   * stiahnutie GSAP. Predohra ho prekryje a po roztvorení clony je pod ňou
+   * rovno hotový.
+   */
+  playLeader();
 
   /* ================================================== 2. HLAVIČKA */
 
@@ -187,19 +185,26 @@
 
   /* ================================================== 3. HERO */
 
-  // Video sa hýbe pomalšie než stránka — hĺbka bez toho, aby si to všimol.
-  gsap.to("#heroMedia", {
-    yPercent: 14,
-    ease: "none",
-    scrollTrigger: { trigger: ".hero", start: "top top", end: "bottom top", scrub: true },
-  });
+  /*
+   * Paralaxa platí len pre celoplošný úvod. Na telefóne je video v páse hore
+   * a text pod ním: posun videa by odkryl pozadie pod pásom a stmievanie
+   * textu by zhaslo obsah, ktorý ešte nikam neodroloval.
+   */
+  if (!noIntro) {
+    // Video sa hýbe pomalšie než stránka — hĺbka bez toho, aby si to všimol.
+    gsap.to("#heroMedia", {
+      yPercent: 14,
+      ease: "none",
+      scrollTrigger: { trigger: ".hero", start: "top top", end: "bottom top", scrub: true },
+    });
 
-  gsap.to(".hero__inner", {
-    yPercent: -18,
-    autoAlpha: 0.15,
-    ease: "none",
-    scrollTrigger: { trigger: ".hero", start: "top top", end: "bottom top", scrub: true },
-  });
+    gsap.to(".hero__inner", {
+      yPercent: -18,
+      autoAlpha: 0.15,
+      ease: "none",
+      scrollTrigger: { trigger: ".hero", start: "top top", end: "bottom top", scrub: true },
+    });
+  }
 
   // Prach v lúči projektora. Málo častíc, dlhé dráhy — inak to vyzerá ako sneh.
   (function motes() {
@@ -393,7 +398,7 @@
       return Math.max(0, track.scrollWidth - window.innerWidth);
     };
 
-    gsap.to(track, {
+    var tween = gsap.to(track, {
       x: function () { return -getShift(); },
       ease: "none",
       scrollTrigger: {
@@ -402,11 +407,78 @@
         // Aj tu vstupuje zapamätaná výška, nie aktuálna.
         end: function () { return "+=" + (getShift() + stabilnaVyska * 0.5); },
         pin: true,
-        scrub: 0.8,
+        // Kratšie dobiehanie než inde: stopa ide priamo pod prstom a väčšie
+        // oneskorenie by pri ťahaní bolo cítiť.
+        scrub: 0.35,
         anticipatePin: 1,
         invalidateOnRefresh: true,
       },
     });
+
+    /*
+     * Cievka sľubuje „Potiahni ↔" — tak nech sa aj dá potiahnuť.
+     *
+     * Ťahanie nenastavuje `x` stopy priamo. Tú riadi ScrollTrigger a pri
+     * najbližšom skrolovaní by si ju stiahol späť na hodnotu odvodenú od
+     * pozície stránky. Vodorovné gesto sa preto prepočíta na posun stránky
+     * po tej istej dráhe, po ktorej cievku vedie skrolovanie.
+     *
+     * Pomer sa pýta priamo ScrollTriggeru, nie počítania z `end` vyššie:
+     * dráhu si po refreshi prepočítava sám a odpisovať mu vzorec by
+     * znamenalo, že sa raz rozídu a stopa sa bude vliecť pomalšie než prst.
+     * Takto prejde stopa presne toľko pixelov, koľko prejde prst.
+     *
+     * Zvislé gesto sa nechá tak — stránka sa musí dať preskrolovať ďalej.
+     */
+    var pomer = function () {
+      var st = tween.scrollTrigger;
+      var shift = getShift();
+      return st && shift > 0 ? (st.end - st.start) / shift : 0;
+    };
+
+    var prst = null;
+    var zx = 0;
+    var zy = 0;
+    var smer = 0; // 0 = ešte nevieme, 1 = vodorovné, -1 = zvislé
+
+    section.addEventListener("pointerdown", function (e) {
+      if (prst !== null) return;
+      if (e.pointerType === "mouse" && e.button !== 0) return;
+      prst = e.pointerId;
+      zx = e.clientX;
+      zy = e.clientY;
+      smer = 0;
+    });
+
+    section.addEventListener("pointermove", function (e) {
+      if (e.pointerId !== prst) return;
+      var dx = e.clientX - zx;
+      var dy = e.clientY - zy;
+
+      if (smer === 0) {
+        // Kým sa gesto nerozhodne, nerobí sa nič. Prah je tam preto, aby
+        // klepnutie s tŕpnutím ruky neposunulo stránku.
+        if (Math.abs(dx) < 10 && Math.abs(dy) < 10) return;
+        smer = Math.abs(dx) > Math.abs(dy) ? 1 : -1;
+        if (smer === 1) section.classList.add("is-dragged");
+      }
+      if (smer !== 1) return;
+
+      // Skokom, nie plynulo: `scroll-behavior: smooth` by z každého posunu
+      // urobil animáciu a ťahanie by sa vlieklo za prstom.
+      window.scrollTo({ top: window.scrollY - dx * pomer(), behavior: "instant" });
+      zx = e.clientX;
+      zy = e.clientY;
+    });
+
+    var pustit = function (e) {
+      if (e.pointerId !== prst) return;
+      prst = null;
+      smer = 0;
+      section.classList.remove("is-dragged");
+    };
+    section.addEventListener("pointerup", pustit);
+    section.addEventListener("pointercancel", pustit);
   })();
 
   /* ================================================== 7. ZAPOJENIE */
