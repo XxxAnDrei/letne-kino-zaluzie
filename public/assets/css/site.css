@@ -2361,3 +2361,31 @@ div[id="prispevok"] {
 .no-intro .hero .reveal {
   opacity: 1;
 }
+
+/*
+ * Bez pripínania (telefón). Vodorovná cievka sa posúva prstom, sekcia večera
+ * nepotrebuje výšku na tri obrazovky a plátno sa neschováva pod nulu, keď ho
+ * nemá kto rozvinúť scrollom.
+ */
+.no-pin .reel {
+  overflow: visible;
+}
+.no-pin .reel__viewport {
+  height: auto;
+  padding-block: clamp(2rem, 6vh, 4rem);
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.no-pin .reel__viewport::-webkit-scrollbar {
+  display: none;
+}
+.no-pin .reel__track {
+  transform: none !important;
+  will-change: auto;
+}
+.no-pin .reel__track > * {
+  scroll-snap-align: center;
+}

@@ -59,6 +59,25 @@
   }
 
   gsap.registerPlugin(ScrollTrigger);
+
+  /*
+   * Na telefóne sa nepripína nič.
+   *
+   * Pripnutá sekcia si pod seba vloží rozperu vysokú niekoľko obrazoviek a jej
+   * výška sa prepočítava z window.innerHeight. Lenže na mobile sa innerHeight
+   * mení pri každom skrolovaní, ako sa schováva adresný riadok. Po prepočte
+   * teda skočí výška dokumentu a s ňou aj pozícia — a kto bol v spodnej časti
+   * stránky, ocitol sa na jej konci.
+   *
+   * Namiesto pripínania beží na telefóne obyčajný scrub cez samotnú sekciu
+   * a vodorovná cievka sa posúva prstom. Stránka je tým aj o štyri obrazovky
+   * kratšia.
+   */
+  var noPin = window.matchMedia("(max-width: 860px)").matches;
+  if (noPin) document.documentElement.classList.add("no-pin");
+
+  // Zmenu výšky okna spôsobenú adresným riadkom má ScrollTrigger ignorovať.
+  ScrollTrigger.config({ ignoreMobileResize: true });
   var canSplit = typeof window.SplitText !== "undefined";
   if (canSplit) gsap.registerPlugin(SplitText);
   var canDraw = typeof window.DrawSVGPlugin !== "undefined";
@@ -278,9 +297,9 @@
     var tl = gsap.timeline({
       scrollTrigger: {
         trigger: section,
-        start: "top top",
-        end: "+=300%",
-        pin: true,
+        start: noPin ? "top 80%" : "top top",
+        end: noPin ? "bottom 20%" : "+=300%",
+        pin: !noPin,
         scrub: 0.7,
         anticipatePin: 1,
         onUpdate: function (self) {
@@ -365,6 +384,9 @@
     var section = document.querySelector(".reel");
     var track = $("reelTrack");
     if (!section || !track) return;
+
+    // Na telefóne sa cievka posúva prstom, o zvyšok sa stará CSS.
+    if (noPin) return;
 
     var getShift = function () {
       return Math.max(0, track.scrollWidth - window.innerWidth);
@@ -548,9 +570,17 @@
     window.addEventListener("load", start);
   }
 
-  // Po otočení telefónu treba prepočítať pripnuté sekcie.
+  /*
+   * Prepočítava sa len pri zmene šírky, teda pri otočení telefónu alebo pri
+   * ťahaní okna na počítači. Pôvodne sa reagovalo na každý resize, lenže ten
+   * na mobile vyvoláva už samotné skrolovanie, keď sa schováva adresný riadok.
+   * Prepočet potom menil výšku dokumentu a stránka pod prstom poskakovala.
+   */
+  var lastWidth = window.innerWidth;
   var resizeTimer;
   window.addEventListener("resize", function () {
+    if (window.innerWidth === lastWidth) return;
+    lastWidth = window.innerWidth;
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(function () { ScrollTrigger.refresh(); }, 200);
   });
