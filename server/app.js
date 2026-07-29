@@ -418,7 +418,12 @@ app.post(
         `budú chodiť na túto adresu.\n\nOdoslané: ${teraz}\n`,
     });
     if (!vysledok.ok) {
-      res.status(502).json({ error: `Brevo správu neprijalo: ${vysledok.error}`, stav });
+      res.status(502).json({
+        error: vysledok.detail
+          ? `${vysledok.error} — ${vysledok.detail}`
+          : `Brevo správu neprijalo: ${vysledok.error}`,
+        stav,
+      });
       return;
     }
     res.json({ ok: true, odoslaneNa: cielova, stav });

@@ -105,10 +105,21 @@ export async function sendMail({ to, toName, subject, text, html }) {
       signal: AbortSignal.timeout(TIMEOUT_MS),
     });
     if (!res.ok) {
-      // Brevo vracia dôvod v tele; bez neho by sa chyba ladila naslepo.
-      const detail = (await res.text()).slice(0, 300);
-      console.error(`e-mail neodoslaný (${res.status}) → ${to}: ${detail}`);
-      return { ok: false, error: `Brevo ${res.status}` };
+      /*
+       * Brevo píše skutočný dôvod do tela odpovede a bez neho sa hádalo.
+       * Rovnaký kód 401 znamená raz neplatný kľúč, inokedy neaktivovaný účet
+       * alebo obmedzenie na povolené IP adresy — rozlíši ich až táto veta.
+       */
+      const raw = (await res.text()).slice(0, 400);
+      let detail = raw;
+      try {
+        const parsed = JSON.parse(raw);
+        detail = parsed.message || raw;
+      } catch {
+        /* nie je JSON, necháme surový text */
+      }
+      console.error(`e-mail neodoslaný (${res.status}) → ${to}: ${raw}`);
+      return { ok: false, error: `Brevo ${res.status}`, detail, status: res.status };
     }
     return { ok: true };
   } catch (err) {
