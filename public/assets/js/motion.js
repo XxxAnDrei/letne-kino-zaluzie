@@ -97,16 +97,21 @@
   function heroIntro() {
     var tl = gsap.timeline({ defaults: { ease: "power4.out" } });
 
+    /*
+     * Časy sú absolútne, nie relatívne. Nad nadpisom bola poznámka a odstupy
+     * („-=0.55" a spol.) sa počítali od dovtedy najdlhšieho miesta timeline;
+     * pri ďalšej zmene obsahu by sa celá choreografia neviditeľne posunula.
+     * Hodnoty sú tie, na ktoré tie odstupy vychádzali.
+     */
     tl.from(".hero__title .ln > span", {
       yPercent: 118,
       duration: 1.15,
       stagger: 0.09,
     })
-      .to('[data-hero="meta"]', { autoAlpha: 1, y: 0, duration: 0.8 }, 0.15)
-      .to('[data-hero="specs"]', { autoAlpha: 1, y: 0, duration: 0.8 }, "-=0.55")
-      .to('[data-hero="cta"]', { autoAlpha: 1, y: 0, duration: 0.8 }, "-=0.6")
-      .to('[data-hero="hint"]', { autoAlpha: 1, duration: 0.6 }, "-=0.5")
-      .to("#beam", { opacity: 1, duration: 2.2, ease: "power1.inOut" }, "-=1.2");
+      .to('[data-hero="specs"]', { autoAlpha: 1, y: 0, duration: 0.8 }, 0.69)
+      .to('[data-hero="cta"]', { autoAlpha: 1, y: 0, duration: 0.8 }, 0.89)
+      .to('[data-hero="hint"]', { autoAlpha: 1, duration: 0.6 }, 1.19)
+      .to("#beam", { opacity: 1, duration: 2.2, ease: "power1.inOut" }, 0.59);
 
     return tl;
   }
@@ -119,7 +124,7 @@
    */
   var noIntro = document.documentElement.classList.contains("no-intro");
   if (!noIntro) {
-    gsap.set('[data-hero="meta"], [data-hero="specs"], [data-hero="cta"], [data-hero="hint"]', {
+    gsap.set('[data-hero="specs"], [data-hero="cta"], [data-hero="hint"]', {
       autoAlpha: 0,
       y: 26,
     });
@@ -160,6 +165,14 @@
         { yPercent: 100, duration: 0.95, ease: "power4.inOut" },
         1.6
       )
+      /*
+       * Clona je roztvorená (1.6 + 0.95) — tu sa predohra odstráni a stránka
+       * odomkne. Kedysi na to čakal `onComplete`, ktorý prišiel až po nábehu
+       * úvodu a rozsvietení lúča: prekrytie bolo síce dávno priehľadné, ale
+       * `is-locked` držalo skrolovanie takmer päť sekúnd. Zvyšok nábehu si
+       * môže pokojne dobehnúť pod prstom.
+       */
+      .call(dropLeader, null, 2.6)
       .add(heroIntro(), 1.95);
 
     return tl;

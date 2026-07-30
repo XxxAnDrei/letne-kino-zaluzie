@@ -839,10 +839,6 @@ textarea {
   .beam {
     display: none;
   }
-  /* Poznámku nad nadpisom si telefón nezaslúži — na pás výšky je vzácne. */
-  .hero__inner > .meta {
-    display: none;
-  }
 }
 
 .scroll-hint {
