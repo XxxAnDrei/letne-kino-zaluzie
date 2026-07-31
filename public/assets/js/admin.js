@@ -199,6 +199,31 @@
       .then(function () { btn.disabled = false; });
   });
 
+  /*
+   * Pripomienky púšťa raz denne Vercel Cron. Tlačidlo robí to isté ručne —
+   * inak sa dá na funkčnosť čakať do najbližšieho rána. Opakované stlačenie
+   * nič nepošle druhýkrát, o to sa stará značka reminded_at na serveri.
+   */
+  $("cronRun").addEventListener("click", function () {
+    var btn = $("cronRun");
+    btn.disabled = true;
+    api("/api/cron/reminders", { method: "POST" })
+      .then(function (r) {
+        var sprava = r.poslane
+          ? "Odoslaných pripomienok: " + r.poslane + "."
+          : "Na dnes ani zajtra nie je čo pripomínať.";
+        if (r.preskocene) sprava += " Nepodarilo sa: " + r.preskocene + ".";
+        if (r.nepotvrdene && r.nepotvrdene.length) {
+          sprava +=
+            " Pozor, nepotvrdené na dnes/zajtra: " +
+            r.nepotvrdene.map(function (x) { return x.ref; }).join(", ") + ".";
+        }
+        toast(sprava, Boolean(r.preskocene));
+      })
+      .catch(function (e) { if (e.message !== "odhlásené") toast(e.message, true); })
+      .then(function () { btn.disabled = false; });
+  });
+
   /* ------------------------------------------------- určenie termínov */
 
   var SCOPE_LABEL = { zaluzie: "iba Veľké Zálužie", all: "aj okolité obce", approval: "po dohode" };

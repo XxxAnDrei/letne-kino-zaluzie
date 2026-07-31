@@ -328,3 +328,180 @@ export function guestDecision(r, settings, status) {
 
   return { subject: `Žiadosť ${r.ref} nebola potvrdená`, text, html };
 }
+
+/* ------------------------------------ 4. padol náhradný termín */
+
+/*
+ * Náhradný termín sa zámerne neblokuje — inak by jedna rodina držala dva
+ * večery. Znamená to ale, že si ho môže kedykoľvek vziať niekto iný alebo ho
+ * správca zablokuje. Bez tejto správy by sa to čakateľ dozvedel až vtedy, keď
+ * v deň premietania prší a preložiť sa už nemá kam.
+ */
+export function guestBackupTaken(r, settings) {
+  const web = siteUrl();
+  const termin = [
+    ['Značka', r.ref],
+    ['Váš termín', formatSk(r.date)],
+    ['Náhradný termín', `${formatSk(r.backupDate)} — už nie je voľný`],
+  ];
+  const dovod =
+    r.reason === 'blackout'
+      ? 'musel som ten deň zavrieť'
+      : 'obsadila ho iná rezervácia';
+
+  const text = [
+    'Dobrý deň,',
+    '',
+    `Váš hlavný termín ${formatSk(r.date)} platí a nič sa s ním nedeje.`,
+    '',
+    `Píšem kvôli náhradnému termínu ${formatSk(r.backupDate)}, ktorý ste si zapísali`,
+    `pre prípad dažďa — ${dovod}, takže s ním už nerátajte.`,
+    '',
+    lines(termin),
+    '',
+    'Nemusíte robiť nič. Ak by v deň premietania pršalo, ozvite sa mi a nájdeme',
+    'iný voľný večer; v kalendári na stránke vidíte, ktoré sú ešte k dispozícii.',
+    ...(web ? ['', web + '/#terminy'] : []),
+    '',
+    'Andrej Práznovský',
+    '+421 911 705 236',
+  ].join('\n');
+
+  const html = page({
+    title: 'Náhradný termín už nie je voľný',
+    preview: `Hlavný termín ${formatSkShort(r.date)} platí, zmenil sa len náhradný.`,
+    blocks: [
+      para('Dobrý deň,'),
+      para(
+        `Váš hlavný termín <b style="color:${C.ivory}">${esc(formatSk(r.date))}</b> platí ` +
+          'a nič sa s ním nedeje.'
+      ),
+      para(
+        `Píšem kvôli náhradnému termínu, ktorý ste si zapísali pre prípad dažďa — ` +
+          `${dovod}, takže s ním už nerátajte.`
+      ),
+      ticket(null, termin),
+      para(
+        'Nemusíte robiť nič. Ak by v deň premietania pršalo, ozvite sa mi a nájdeme iný ' +
+          'voľný večer.'
+      ),
+      web ? button(`${web}/#terminy`, 'Pozrieť voľné termíny') : '',
+    ],
+  });
+
+  return {
+    subject: `Náhradný termín ${formatSkShort(r.backupDate)} už nie je voľný · ${r.ref}`,
+    text,
+    html,
+  };
+}
+
+/* ------------------------------------ 5. pripomienka pred premietaním */
+
+/*
+ * Chodí ráno pred premietaním. Deň sa nepočíta v šablóne — posiela ho volajúci
+ * ako `denPred`, lebo cron beží aj ako záchranná sieť za zmeškaný deň a vtedy
+ * musí správa povedať „dnes", nie „zajtra".
+ */
+export function guestReminder(r, settings) {
+  const kedy = r.denPred ? 'zajtra' : 'dnes';
+  const back = addDays(r.date, 1);
+  const termin = [
+    ['Značka', r.ref],
+    ['Premietanie', formatSk(r.date)],
+    ['Prevzatie', `${settings.pickupTime} v deň premietania`],
+    ['Vrátenie', `${formatSk(back)} do ${settings.returnTime}`],
+  ];
+
+  const text = [
+    'Dobrý deň,',
+    '',
+    `${kedy === 'zajtra' ? 'Zajtra' : 'Dnes'} je Váš filmový večer. Technika je pripravená,`,
+    `prevziať si ju môžete o ${settings.pickupTime}.`,
+    '',
+    lines(termin),
+    '',
+    'Čo sa oplatí prejsť ešte pred tým:',
+    '· rovná plocha aspoň 6 × 4 metre, bez ostrých predmetov pod plátnom',
+    '· zásuvka 230 V v dosahu 20 metrov',
+    '· možnosť zakotviť plátno do trávy (kolíky sú v balení)',
+    '· vybratý film a zariadenie, z ktorého ho pustíte',
+    '',
+    'Pozrite si prosím aj predpoveď. Ak to vyzerá na dážď alebo silnejší vietor,',
+    'zavolajte mi radšej vopred — plátno je nafukovacie a vietru nesvedčí.',
+    '',
+    'Andrej Práznovský',
+    '+421 911 705 236',
+  ].join('\n');
+
+  const html = page({
+    title: kedy === 'zajtra' ? 'Zajtra premietate' : 'Dnes premietate',
+    preview: `Prevzatie o ${settings.pickupTime}, vrátenie ${formatSkShort(back)} do ${settings.returnTime}.`,
+    blocks: [
+      para('Dobrý deň,'),
+      para(
+        `${kedy === 'zajtra' ? 'zajtra' : 'dnes'} je Váš filmový večer. Technika je pripravená, ` +
+          `prevziať si ju môžete o <b style="color:${C.ivory}">${esc(settings.pickupTime)}</b>.`
+      ),
+      ticket(r.ref, termin),
+      para(
+        `<b style="color:${C.ivory}">Čo sa oplatí prejsť ešte pred tým:</b><br>` +
+          'rovná plocha aspoň 6 × 4 metre bez ostrých predmetov pod plátnom · zásuvka 230 V ' +
+          'v dosahu 20 metrov · možnosť zakotviť plátno do trávy (kolíky sú v balení) · ' +
+          'vybratý film a zariadenie, z ktorého ho pustíte'
+      ),
+      para(
+        'Pozrite si prosím aj predpoveď. Ak to vyzerá na dážď alebo silnejší vietor, zavolajte ' +
+          'mi radšej vopred — plátno je nafukovacie a vietru nesvedčí.'
+      ),
+    ],
+  });
+
+  return {
+    subject:
+      kedy === 'zajtra'
+        ? `Zajtra premietate · ${r.ref}`
+        : `Dnes premietate · ${r.ref}`,
+    text,
+    html,
+  };
+}
+
+/* ------------------------------------ 6. presunutý termín */
+
+export function guestMoved(r, settings) {
+  const termin = slot(r, settings);
+
+  const text = [
+    'Dobrý deň,',
+    '',
+    `rezerváciu ${r.ref} som preložil z ${formatSk(r.movedFrom)} na ${formatSk(r.date)}.`,
+    '',
+    lines([['Značka', r.ref], ...termin]),
+    '',
+    'Pôvodný termín sa vrátil do kalendára ako voľný. Ak by Vám nový dátum',
+    'nevyhovoval, zavolajte mi a nájdeme iný.',
+    '',
+    'Andrej Práznovský',
+    '+421 911 705 236',
+  ].join('\n');
+
+  const html = page({
+    title: 'Termín je preložený',
+    preview: `Z ${formatSkShort(r.movedFrom)} na ${formatSkShort(r.date)}.`,
+    blocks: [
+      para('Dobrý deň,'),
+      para(
+        `rezerváciu <b style="color:${C.ivory}">${esc(r.ref)}</b> som preložil ` +
+          `z ${esc(formatSk(r.movedFrom))} na <b style="color:${C.ivory}">${esc(formatSk(r.date))}</b>.`
+      ),
+      ticket(r.ref, termin),
+      para(
+        'Pôvodný termín sa vrátil do kalendára ako voľný. Ak by Vám nový dátum nevyhovoval, ' +
+          'zavolajte mi a nájdeme iný.'
+      ),
+    ],
+  });
+
+  return { subject: `Termín preložený na ${formatSkShort(r.date)} · ${r.ref}`, text, html };
+}

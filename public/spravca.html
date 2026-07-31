@@ -222,6 +222,17 @@
               <h2>E-maily</h2>
               <p class="form__note" id="mailState">Zisťujem stav…</p>
               <button class="act" type="button" id="mailTest">Poslať skúšobný e-mail</button>
+              <p class="form__note">
+                Automaticky chodia tieto správy: <b>prijatie žiadosti</b> (tebe aj žiadateľovi),
+                <b>potvrdenie alebo zamietnutie</b>, <b>preloženie termínu</b> a
+                <b>pripomienka ráno pred premietaním</b>. Ak niekomu padne náhradný termín —
+                obsadí ho iná rezervácia alebo ho zablokuješ — dostane o tom správu tiež.
+              </p>
+              <p class="form__note">
+                Pripomienky púšťa každé ráno cron. Tlačidlo ich spustí hneď; komu už dnes
+                odišla, druhýkrát ju nedostane.
+              </p>
+              <button class="act" type="button" id="cronRun">Spustiť pripomienky teraz</button>
             </div>
 
             <div class="panel">
@@ -233,8 +244,9 @@
               </p>
               <p class="form__note">
                 <b>Presunúť</b> preloží rezerváciu na náhradný termín pri zlom počasí —
-                pôvodný deň sa tým uvoľní. <b>Prevzatie</b> a <b>vrátenie</b> zapíšu
-                odovzdávací zoznam s časom a stavom vybavenia.
+                pôvodný deň sa tým uvoľní a žiadateľovi odíde e-mail s novým dátumom.
+                <b>Prevzatie</b> a <b>vrátenie</b> zapíšu odovzdávací zoznam s časom
+                a stavom vybavenia.
               </p>
             </div>
         </div>

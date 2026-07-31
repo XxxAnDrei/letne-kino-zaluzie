@@ -85,6 +85,23 @@ const SCHEMA = [
      ON reservations(date) WHERE status IN ('pending', 'approved')`,
 ];
 
+/*
+ * Dodatočné stĺpce. Tabuľka sa zakladá cez CREATE TABLE IF NOT EXISTS, takže
+ * v databáze, ktorá už beží, by sa zmena v SCHEMA nikdy neprejavila — musí
+ * prísť ako ALTER. Postgres pozná IF NOT EXISTS, SQLite nie, preto sa chyba
+ * o už existujúcom stĺpci prehltne a beh pokračuje.
+ *
+ *   reminded_at     — kedy odišla pripomienka deň pred premietaním
+ *   backup_alert_at — kedy sme dali vedieť, že náhradný termín padol
+ *
+ * Obe sú „už sme to poslali" značky. Bez nich by opakované spustenie cronu
+ * alebo druhá rezervácia na ten istý deň poslali ten istý e-mail znova.
+ */
+const MIGRATIONS = [
+  'ALTER TABLE reservations ADD COLUMN reminded_at TEXT',
+  'ALTER TABLE reservations ADD COLUMN backup_alert_at TEXT',
+];
+
 const DEFAULT_SETTINGS = {
   season_start: '05-01',
   season_end: '09-30',
@@ -122,6 +139,14 @@ export function init() {
   if (!ready) {
     ready = (async () => {
       for (const sql of SCHEMA) await db.run(sql);
+      for (const sql of MIGRATIONS) {
+        try {
+          await db.run(sql);
+        } catch (err) {
+          // Stĺpec už existuje — jediná chyba, ktorá sa tu smie ignorovať.
+          if (!/duplicate column|already exists/i.test(String(err.message))) throw err;
+        }
+      }
       for (const [key, value] of Object.entries(DEFAULT_SETTINGS)) {
         await db.run(
           'INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT (key) DO NOTHING',

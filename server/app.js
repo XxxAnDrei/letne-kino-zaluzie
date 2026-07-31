@@ -1,3 +1,4 @@
+import crypto from 'node:crypto';
 import express from 'express';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -19,7 +20,14 @@ import {
   successLimiter,
 } from './auth.js';
 import { adminAddress, mailStatus, sendAll, sendMail } from './mailer.js';
-import { adminNewRequest, guestDecision, guestReceived } from './emails.js';
+import {
+  adminNewRequest,
+  guestBackupTaken,
+  guestDecision,
+  guestMoved,
+  guestReceived,
+  guestReminder,
+} from './emails.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const publicDir = path.join(__dirname, '..', 'public');
@@ -160,6 +168,62 @@ async function createReservation(clean) {
   });
 }
 
+/*
+ * Komu padol náhradný termín.
+ *
+ * Náhradný termín sa zámerne neblokuje, takže ho môže obsadiť iná rezervácia
+ * alebo ho správca zavrie ako blackout. Čakateľ o tom nemá ako vedieť — a
+ * zistil by to až v daždi, keď sa preložiť už nemá kam. Volá sa preto vždy,
+ * keď sa nejaký deň stane nedostupným.
+ *
+ * `backup_alert_at` drží, že sme už písali: druhá rezervácia na ten istý deň
+ * ani opakované zablokovanie nepošlú ten istý e-mail znova. Odosielanie nikdy
+ * nezhodí volajúcu operáciu — rezervácia aj blokácia sú v tej chvíli hotové
+ * a e-mail je iba láskavosť navyše.
+ *
+ * Rezervácia, ktorá deň práve obsadila, sa neupozorní sama: validácia
+ * nepustí náhradný termín zhodný s hlavným, takže sa do výberu nedostane.
+ * Podmienka `date > dnes` zase vynechá tých, ktorým už premietanie prebehlo —
+ * náhradný termín po akcii nikoho nezaujíma.
+ */
+async function alertBackupHolders(dates, { reason = 'reservation' } = {}) {
+  const zoznam = (Array.isArray(dates) ? dates : [dates]).filter(isIsoDate);
+  if (zoznam.length === 0) return { poslane: 0 };
+
+  try {
+    const miesta = zoznam.map(() => '?').join(', ');
+    const ciele = await db.all(
+      `SELECT * FROM reservations
+        WHERE backup_date IN (${miesta})
+          AND status IN ('pending', 'approved')
+          AND backup_alert_at IS NULL
+          AND date > ?`,
+      [...zoznam, today()]
+    );
+    if (ciele.length === 0) return { poslane: 0 };
+
+    const settings = await getSettings();
+    const stamp = new Date().toISOString();
+    await sendAll(
+      ciele.map((r) => ({
+        to: r.email,
+        toName: r.name,
+        ...guestBackupTaken(
+          { ref: r.ref, date: r.date, backupDate: r.backup_date, reason },
+          settings
+        ),
+      }))
+    );
+    for (const r of ciele) {
+      await db.run('UPDATE reservations SET backup_alert_at = ? WHERE id = ?', [stamp, r.id]);
+    }
+    return { poslane: ciele.length };
+  } catch (err) {
+    console.error('upozornenie na obsadený náhradný termín zlyhalo:', err.message);
+    return { poslane: 0, chyba: err.message };
+  }
+}
+
 app.post(
   '/api/reservations',
   reservationBurstLimiter,
@@ -197,6 +261,9 @@ app.post(
       adminAddress() && { to: adminAddress(), ...adminNewRequest(forMail, settings) },
       { to: clean.email, toName: clean.name, ...guestReceived(forMail, settings) },
     ]);
+
+    // Tento deň bol pre niekoho náhradným termínom — teraz už nie je voľný.
+    await alertBackupHolders(clean.date, { reason: 'reservation' });
 
     res.status(201).json({
       ref: created.ref,
@@ -435,6 +502,113 @@ app.post(
   })
 );
 
+/* ------------------------------------------------------ pripomienky (cron) */
+
+/*
+ * Pripomienka deň pred premietaním.
+ *
+ * Na Verceli nič nebeží samo od seba — funkcia sa prebudí len na požiadavku.
+ * Spúšťačom je preto Vercel Cron (`crons` vo vercel.json), ktorý sem raz denne
+ * pošle GET. Overuje sa hlavičkou `Authorization: Bearer <CRON_SECRET>`, ktorú
+ * Vercel pridá sám, ak je premenná nastavená; prihlásený správca sa dostane
+ * dnu tiež, aby sa dalo spustenie vyskúšať tlačidlom v paneli.
+ *
+ * Berie sa dnešok aj zajtrajšok. Keby cron jeden deň vypadol, ten, kto mal mať
+ * pripomienku včera, ju dostane aspoň ráno v deň premietania — a text sa podľa
+ * dátumu sám prepne zo „zajtra" na „dnes". `reminded_at` zaručí, že opakované
+ * spustenie v ten istý deň nepošle nič druhýkrát.
+ *
+ * Iba potvrdené rezervácie. Ak je deň pred premietaním žiadosť stále v stave
+ * „čaká", nie je čo pripomínať — v odpovedi sa preto vypíše zvlášť, nech to
+ * správca v paneli vidí.
+ */
+function cronAuthorised(req) {
+  const secret = process.env.CRON_SECRET || '';
+  if (secret) {
+    const header = req.get('Authorization') || '';
+    const podany = header.startsWith('Bearer ') ? header.slice(7) : '';
+    // Rovnaká dĺžka je podmienka timingSafeEqual, nie zjednodušenie porovnania.
+    if (podany.length === secret.length && crypto.timingSafeEqual(Buffer.from(podany), Buffer.from(secret))) {
+      return true;
+    }
+  }
+  // Správca sa dostane dnu aj bez tajomstva, nech si vie spustenie vyskúšať.
+  if (!isAuthed(req)) return false;
+  return req.method === 'GET' || req.get('X-Requested-With') === 'kino-admin';
+}
+
+async function runReminders() {
+  const dnes = today();
+  const zajtra = addDays(dnes, 1);
+
+  const cakajuce = await db.all(
+    "SELECT ref, date, name FROM reservations WHERE date IN (?, ?) AND status = 'pending' ORDER BY date ASC",
+    [dnes, zajtra]
+  );
+  const ciele = await db.all(
+    `SELECT * FROM reservations
+      WHERE date IN (?, ?) AND status = 'approved' AND reminded_at IS NULL
+      ORDER BY date ASC`,
+    [dnes, zajtra]
+  );
+
+  if (ciele.length === 0) {
+    return { ok: true, den: dnes, poslane: 0, preskocene: 0, nepotvrdene: cakajuce, chyby: [] };
+  }
+
+  const settings = await getSettings();
+  const vysledky = await sendAll(
+    ciele.map((r) => ({
+      to: r.email,
+      toName: r.name,
+      ...guestReminder(
+        { ref: r.ref, date: r.date, denPred: r.date === zajtra },
+        settings
+      ),
+    }))
+  );
+
+  /*
+   * Značka sa zapíše len tomu, komu e-mail naozaj odišiel. Keby sa označili
+   * všetci, výpadok Brevo by pripomienku ticho zhltol a druhý pokus by už
+   * nikdy neprišiel.
+   */
+  const stamp = new Date().toISOString();
+  const chyby = [];
+  let poslane = 0;
+  for (let i = 0; i < ciele.length; i += 1) {
+    if (vysledky[i] && vysledky[i].ok) {
+      await db.run('UPDATE reservations SET reminded_at = ? WHERE id = ?', [stamp, ciele[i].id]);
+      poslane += 1;
+    } else {
+      chyby.push({ ref: ciele[i].ref, chyba: vysledky[i]?.detail || vysledky[i]?.error || 'neznáma' });
+    }
+  }
+
+  return {
+    ok: chyby.length === 0,
+    den: dnes,
+    poslane,
+    preskocene: chyby.length,
+    nepotvrdene: cakajuce,
+    chyby,
+  };
+}
+
+const remindersRoute = route(async (req, res) => {
+  if (!cronAuthorised(req)) {
+    res.status(401).json({ error: 'Neoprávnená požiadavka.' });
+    return;
+  }
+  res.set('Cache-Control', 'no-store');
+  const vysledok = await runReminders();
+  res.status(vysledok.ok ? 200 : 502).json(vysledok);
+});
+
+// GET pre Vercel Cron, POST pre tlačidlo v paneli.
+app.get('/api/cron/reminders', remindersRoute);
+app.post('/api/cron/reminders', remindersRoute);
+
 app.delete(
   '/api/admin/reservations/:id',
   requireAdmin,
@@ -497,13 +671,39 @@ app.post(
       return;
     }
 
+    /*
+     * `reminded_at` sa nuluje: pripomienka mohla odísť na pôvodný dátum a na
+     * nový termín musí prísť znova. Rovnako `backup_alert_at` — náhradný
+     * termín sa presunom spotreboval a ak si dohodnú nový, upozornenie naň
+     * má opäť fungovať.
+     */
     await db.run(
       `UPDATE reservations
-          SET moved_from = COALESCE(moved_from, date), date = ?, backup_date = NULL, updated_at = ?
+          SET moved_from = COALESCE(moved_from, date), date = ?, backup_date = NULL,
+              reminded_at = NULL, backup_alert_at = NULL, updated_at = ?
         WHERE id = ?`,
       [target, new Date().toISOString(), id]
     );
-    res.json({ reservation: await db.get('SELECT * FROM reservations WHERE id = ?', [id]) });
+    const presunuta = await db.get('SELECT * FROM reservations WHERE id = ?', [id]);
+
+    const settings = await getSettings();
+    await sendAll([
+      {
+        to: presunuta.email,
+        toName: presunuta.name,
+        ...guestMoved(
+          {
+            ref: presunuta.ref,
+            date: presunuta.date,
+            backupDate: presunuta.backup_date,
+            movedFrom: row.date,
+          },
+          settings
+        ),
+      },
+    ]);
+
+    res.json({ reservation: presunuta });
   })
 );
 
@@ -608,7 +808,9 @@ app.post(
         );
       }
     });
-    res.status(201).json({ ok: true, pocet: dni.length });
+    // Zavretý deň mohol byť pre niekoho náhradným termínom.
+    const upozornenia = await alertBackupHolders(dni, { reason: 'blackout' });
+    res.status(201).json({ ok: true, pocet: dni.length, upozornenia: upozornenia.poslane });
   })
 );
 

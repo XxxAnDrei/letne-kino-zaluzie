@@ -81,16 +81,60 @@ relácia trvá 12 hodín.
 
 ## E-maily
 
-Posielajú sa tri správy:
+Posiela sa šesť správ:
 
-| Kedy                       | Komu       | O čom                                          |
-| -------------------------- | ---------- | ---------------------------------------------- |
-| príde žiadosť              | správcovi  | kontakt, termín, poznámka, odkaz do panela     |
-| príde žiadosť              | žiadateľovi| termín je podržaný, ešte to nie je potvrdenie  |
-| žiadosť sa schváli/zamietne| žiadateľovi| potvrdenie s pokynmi, alebo dôvod zamietnutia  |
+| Kedy                        | Komu        | O čom                                            |
+| --------------------------- | ----------- | ------------------------------------------------ |
+| príde žiadosť               | správcovi   | kontakt, termín, poznámka, odkaz do panela       |
+| príde žiadosť               | žiadateľovi | termín je podržaný, ešte to nie je potvrdenie    |
+| žiadosť sa schváli/zamietne | žiadateľovi | potvrdenie s pokynmi, alebo dôvod zamietnutia    |
+| padne náhradný termín       | žiadateľovi | hlavný termín platí, náhradný už nie je voľný    |
+| termín sa preloží           | žiadateľovi | starý aj nový dátum, pôvodný sa uvoľnil          |
+| ráno pred premietaním       | žiadateľovi | čas prevzatia, čo pripraviť, pozor na počasie    |
 
 Rozhodnutie odchádza len pri skutočnej zmene stavu, takže dopísanie internej
 poznámky k žiadosti nikomu e-mail nepošle.
+
+### Padnutý náhradný termín
+
+Náhradný termín sa **zámerne neblokuje** — inak by jedna rodina držala dva
+večery. Môže si ho teda kedykoľvek vziať iná rezervácia alebo ho správca zavrie
+ako blokovaný deň. V oboch prípadoch o tom čakateľ dostane správu; bez nej by
+sa to dozvedel až v daždi, keď sa preložiť už nemá kam.
+
+Stĺpec `backup_alert_at` drží, že sa už písalo, takže opakované zablokovanie ani
+ďalšia rezervácia na ten istý deň nepošlú tú istú správu druhýkrát. Presun
+termínu značku vynuluje — s novým náhradným termínom má upozornenie opäť platiť.
+
+### Pripomienka pred premietaním (cron)
+
+Na Verceli nič nebeží samo od seba, funkcia sa prebudí len na požiadavku.
+Pripomienku preto spúšťa **Vercel Cron**, nastavený vo `vercel.json`:
+
+```json
+"crons": [{ "path": "/api/cron/reminders", "schedule": "0 7 * * *" }]
+```
+
+Rozvrh je v UTC, takže 7:00 UTC je 9:00 v lete a 8:00 v zime.
+
+Endpoint chráni `CRON_SECRET`. Vercel ho pri každom behu pošle sám v hlavičke
+`Authorization: Bearer …`, stačí ho mať medzi premennými projektu; vygeneruj ho
+napríklad cez `openssl rand -hex 32`. **Bez tejto premennej cron dostane 401** a
+pripomienky sa nepošlú — endpoint potom otvorí len prihlásený správca.
+
+Čo cron robí:
+
+- berie **potvrdené** rezervácie na dnes aj na zajtra; keby jeden deň vypadol,
+  ten, komu mala pripomienka prísť včera, ju dostane aspoň ráno v deň
+  premietania a text sa sám prepne zo „zajtra" na „dnes"
+- `reminded_at` zaručí, že opakované spustenie v ten istý deň nepošle nič znova
+- značka sa zapíše **len tomu, komu e-mail naozaj odišiel**; keby sa označili
+  všetci, výpadok Brevo by pripomienku ticho zhltol a druhý pokus by už neprišiel
+- žiadosti, ktoré sú deň pred premietaním stále v stave *čaká*, sa nepripomínajú,
+  ale vypíšu sa v odpovedi, nech ich správca v paneli vidí
+
+V paneli je tlačidlo **Spustiť pripomienky teraz** — robí to isté ručne, aby sa
+na overenie nemuselo čakať do rána.
 
 Odosiela sa cez **Brevo** a cez jeho HTTP API, nie cez SMTP: serverless funkcia
 žije pár sekúnd a držať v nej otvorené SMTP spojenie je pomalé. Adresa
@@ -142,6 +186,7 @@ v nastaveniach.
 | `BREVO_API_KEY`       | kľúč k Brevu; bez neho sa e-maily neposielajú                    |
 | `MAIL_FROM`           | adresa odosielateľa, overená v Breve                             |
 | `MAIL_ADMIN`          | kam chodia upozornenia o nových žiadostiach                       |
+| `CRON_SECRET`         | chráni `/api/cron/reminders`; bez neho cron dostane 401           |
 | `SITE_URL`            | verejná adresa stránky pre odkazy v e-mailoch                    |
 | `DATABASE_URL`        | adresa Postgresu (Supabase); má prednosť pred Tursom              |
 | `TURSO_DATABASE_URL`  | adresa Turso databázy                                             |
@@ -314,3 +359,19 @@ RES_LIMIT_MAX=500 RES_BURST_MAX=500 LOGIN_MAX=500 npm start
 
 Tie isté premenné slúžia aj v prevádzke, keby za jednou obecnou IP adresou bolo
 priveľa domácností a limit im zamykal susedov.
+
+## Test e-mailov a pripomienok
+
+`scripts/test-emails.mjs` prejde 46 kontrol nad všetkým, čo sa posiela mimo
+bežnej žiadosti: padnutý náhradný termín (obsadený aj zablokovaný), pripomienku
+deň pred premietaním aj jej záchranu v deň premietania, presun termínu, ochranu
+cron endpointu a to, že zlyhané odoslanie sa neoznačí ako hotové.
+
+```bash
+node scripts/test-emails.mjs
+```
+
+Server si spúšťa sám a píše do vlastnej databázy v `./data/test-emails`, takže
+ostrým dátam sa nemôže dostať pod ruku. Brevo nahrádza zachytávač navesený na
+globálny `fetch` — mailer, šablóny, routy aj databáza sú skutočné, do siete sa
+však nič nepošle a **nepotrebuje ani platný kľúč**.
