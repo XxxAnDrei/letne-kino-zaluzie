@@ -523,7 +523,14 @@ app.post(
  * správca v paneli vidí.
  */
 function cronAuthorised(req) {
-  const secret = process.env.CRON_SECRET || '';
+  /*
+   * `trim()` nie je kozmetika. Tajomstvo sa do premenných dostane kopírovaním
+   * a zalomenie riadka na konci sa veze s ním. Vercel taký build odmietne, ale
+   * na vlastnom serveri v .env by prešlo a porovnanie by ticho padalo — hodinu
+   * by sa hľadalo, prečo cron dostáva 401. V hlavičke medzery okolo hodnoty
+   * odstráni už HTTP, takže sa čistí len premenná.
+   */
+  const secret = (process.env.CRON_SECRET || '').trim();
   if (secret) {
     const header = req.get('Authorization') || '';
     const podany = header.startsWith('Bearer ') ? header.slice(7) : '';
