@@ -81,6 +81,19 @@
   var toastTimer;
   function toast(message, bad) {
     var node = $("toast");
+
+    /*
+     * Modálny <dialog> leží v hornej vrstve prehliadača a prekryje všetko mimo
+     * seba — bez ohľadu na z-index. Kým bolo okno s nastaveniami otvorené,
+     * hláška síce vznikla, ale ležala pod ním a nikto ju nevidel: správca
+     * klikol na „Zablokovať", termín sa kvôli aktívnej rezervácii nezablokoval
+     * a na obrazovke sa nestalo vôbec nič. Hlásenie preto ide dovnútra
+     * otvoreného okna. `position: fixed` sa tým neposunie, lebo okno nemá
+     * transform ani filter, ktorý by mu vytvoril nový vzťažný rám.
+     */
+    var host = document.querySelector("dialog[open]") || document.body;
+    if (node.parentNode !== host) host.appendChild(node);
+
     node.hidden = false;
     node.textContent = message;
     node.classList.toggle("is-bad", !!bad);
@@ -105,6 +118,12 @@
   /* --------------------------------------------------------- prihlásenie */
 
   function showLogin() {
+    // Okno s nastaveniami je v hornej vrstve a skrytie panela pod ním ho
+    // nezavrie. Bez tohto by po vypršaní relácie zostalo na obrazovke okno,
+    // v ktorom už nič nefunguje, a prihlasovací formulár by ostal pod ním.
+    var dialog = $("settingsDlg");
+    if (dialog && dialog.open) dialog.close();
+
     $("login").hidden = false;
     $("panel").hidden = true;
     $("password").focus();

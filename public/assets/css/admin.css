@@ -356,12 +356,19 @@ body.admin {
   bottom: 1.75rem;
   transform: translateX(-50%) translateY(120%);
   z-index: 60;
+  /* Dlhé hlásenie sa musí zmestiť aj na telefón. Chyby zo servera vedia mať
+     dve vety — bez tohto by pilulka pretiekla cez okraje obrazovky. */
+  max-width: min(30rem, calc(100vw - 2rem));
   background: var(--ivory);
   color: var(--night-950);
   padding: 0.7rem 1.25rem;
-  border-radius: 999px;
+  /* Nie 999px: pri zalomení na viac riadkov z pilulky vznikne divný ovál. */
+  border-radius: 1.1rem;
   font-size: var(--step--1);
   font-weight: 600;
+  line-height: 1.4;
+  text-align: center;
+  text-wrap: pretty;
   box-shadow: 0 18px 40px -18px rgb(0 0 0 / 0.7);
   pointer-events: none;
 }
